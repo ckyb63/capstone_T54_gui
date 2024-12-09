@@ -2,6 +2,7 @@ import streamlit as st
 import time
 import atexit
 from camera_handler import CameraHandler
+from ros_handler import ROSHandler
 
 def main():
     st.set_page_config(
@@ -24,6 +25,10 @@ def main():
     if hasattr(st, 'session_state') and 'cleanup_registered' not in st.session_state:
         atexit.register(camera_handler.release)
         st.session_state.cleanup_registered = True
+
+    # Add ROS handler initialization to your existing initialization section
+    if 'ros_handler' not in st.session_state:
+        st.session_state.ros_handler = ROSHandler()
 
     # Update the CSS with simpler, more direct styling
     st.markdown("""
@@ -168,25 +173,40 @@ def main():
 def process_selection(item, status_container):
     """Handle the PPE item selection and dispensing process"""
     st.session_state.selected_item = item
+    ros_handler = st.session_state.ros_handler
     
     # Create a new container for the progress bar
     progress_container = st.empty()
     
     # Update status in header
-    status_container.markdown(f"<div class='status'>Status: Processing request for {item}...</div>", unsafe_allow_html=True)
+    status_message = f"Status: Processing request for {item}..."
+    status_container.markdown(f"<div class='status'>{status_message}</div>", unsafe_allow_html=True)
     
-    # Use the container for the progress bar
-    with st.spinner(text=None):  # Spinner without darkening the UI
-        progress_bar = progress_container.progress(0)
-        for i in range(100):
-            time.sleep(0.01)  # Reduced delay for faster processing
-            progress_bar.progress(i + 1, text=f"Processing {i+1}%")
+    # Publish status to ROS
+    ros_handler.publish_status(status_message)
     
-    status_container.markdown(f"<div class='status'>Status: {item} dispensed! Please collect.</div>", unsafe_allow_html=True)
+    # Send dispense command to ROS
+    if ros_handler.publish_dispense_command(item):
+        # Use the container for the progress bar
+        with st.spinner(text=None):
+            progress_bar = progress_container.progress(0)
+            for i in range(100):
+                time.sleep(0.01)
+                progress_bar.progress(i + 1, text=f"Processing {i+1}%")
+        
+        status_message = f"Status: {item} dispensed! Please collect."
+    else:
+        status_message = "Status: Failed to communicate with vending machine"
     
-    time.sleep(1)  # Reduced delay
-    progress_container.empty()  # Only clear the progress bar
-    status_container.markdown("<div class='status'>Status: Ready to dispense...</div>", unsafe_allow_html=True)
+    status_container.markdown(f"<div class='status'>{status_message}</div>", unsafe_allow_html=True)
+    ros_handler.publish_status(status_message)
+    
+    time.sleep(1)
+    progress_container.empty()
+    
+    status_message = "Status: Ready to dispense..."
+    status_container.markdown(f"<div class='status'>{status_message}</div>", unsafe_allow_html=True)
+    ros_handler.publish_status(status_message)
 
 if __name__ == "__main__":
     main()
