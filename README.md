@@ -31,11 +31,19 @@ sudo apt-get install ros-noetic-desktop-full python3-rospy
 
 ## Usage
 
+### Testing Without ROS
+The GUI can be run without ROS for testing purposes:
+```bash
+streamlit run "First Attempt With camera.py"
+```
+In this mode, ROS commands will be printed to the console instead of being published to ROS topics.
+
+### Running with ROS
+To run with full ROS integration:
 1. Start ROS core:
 ```bash
 roscore
 ```
-
 2. Launch the GUI:
 ```bash
 streamlit run "First Attempt With camera.py"
