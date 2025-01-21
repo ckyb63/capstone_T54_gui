@@ -78,6 +78,12 @@ def main():
         .element-container {
             margin-bottom: 0 !important;
         }
+        .safety-status {
+            font-size: 20px !important;
+            text-align: left !important;
+            margin: 5px !important;
+            color: #2ecc71;  /* Green for locked status */
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -97,7 +103,11 @@ def main():
         
         # Status container
         status_container = st.empty()
+        safety_status = st.empty()
+        
+        # Update status displays
         status_container.markdown("<div class='status'>Status: Ready to dispense...</div>", unsafe_allow_html=True)
+        safety_status.markdown("<div class='safety-status'>Safety Gate: Locked</div>", unsafe_allow_html=True)
 
         # Video feed container
         st.markdown("<div class='video-container'>", unsafe_allow_html=True)
@@ -175,6 +185,11 @@ def process_selection(item, status_container):
     st.session_state.selected_item = item
     ros_handler = st.session_state.ros_handler
     
+    # Check safety gate status before proceeding
+    if not ros_handler.check_safety_gate():
+        status_container.markdown("<div class='status'>Error: Safety gate must be closed</div>", unsafe_allow_html=True)
+        return
+        
     # Create a new container for the progress bar
     progress_container = st.empty()
     
