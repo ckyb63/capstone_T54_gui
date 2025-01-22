@@ -34,7 +34,7 @@ sudo apt-get install ros-noetic-desktop-full python3-rospy
 ### Testing Without ROS
 The GUI can be run without ROS for testing purposes:
 ```bash
-streamlit run "First Attempt With camera.py"
+streamlit run "mainStreamlitGUI.py"
 ```
 In this mode, ROS commands will be printed to the console instead of being published to ROS topics.
 
@@ -94,10 +94,7 @@ Modify `yolo_detector.py` for:
 
 ## Team
 
-- GUI Development: [Your Name]
-- ROS Integration: [Team Member]
-- Computer Vision: [Team Member]
+- GUI Development: [Max Chen]
+
 
 ## License
-
-[Your License]

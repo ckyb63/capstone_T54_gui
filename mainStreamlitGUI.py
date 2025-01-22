@@ -1,8 +1,8 @@
 import streamlit as st
 import time
 import atexit
-from camera_handler import CameraHandler
-from ros_handler import ROSHandler
+# from camera_handler import CameraHandler  # Comment out this line
+# from ros_handler import ROSHandler  # Comment out this line
 
 def main():
     st.set_page_config(
@@ -16,19 +16,19 @@ def main():
         st.session_state.running = True
 
     # Initialize camera handler in session state
-    if 'camera_handler' not in st.session_state:
-        st.session_state.camera_handler = CameraHandler()
+    # if 'camera_handler' not in st.session_state:
+    #     st.session_state.camera_handler = CameraHandler()
     
-    camera_handler = st.session_state.camera_handler
+    # camera_handler = st.session_state.camera_handler
 
     # Register cleanup
-    if hasattr(st, 'session_state') and 'cleanup_registered' not in st.session_state:
-        atexit.register(camera_handler.release)
-        st.session_state.cleanup_registered = True
+    # if hasattr(st, 'session_state') and 'cleanup_registered' not in st.session_state:
+    #     atexit.register(camera_handler.release)
+    #     st.session_state.cleanup_registered = True
 
     # Add ROS handler initialization to your existing initialization section
-    if 'ros_handler' not in st.session_state:
-        st.session_state.ros_handler = ROSHandler()
+    # if 'ros_handler' not in st.session_state:
+    #     st.session_state.ros_handler = ROSHandler()
 
     # Update the CSS with simpler, more direct styling
     st.markdown("""
@@ -84,6 +84,18 @@ def main():
             margin: 5px !important;
             color: #2ecc71;  /* Green for locked status */
         }
+        .placeholder-box {
+            width: 100%;
+            height: 400px;
+            background-color: #f0f0f0;
+            border: 2px dashed #cccccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+            font-size: 20px;
+            color: #666666;
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -93,7 +105,7 @@ def main():
         with st.sidebar:
             if st.button("Stop Application", type="primary"):
                 st.session_state.running = False
-                camera_handler.release()
+                # camera_handler.release()
                 st.stop()
 
         st.markdown("<div class='main-content'>", unsafe_allow_html=True)
@@ -111,7 +123,7 @@ def main():
 
         # Video feed container
         st.markdown("<div class='video-container'>", unsafe_allow_html=True)
-        video_placeholder = st.empty()
+        st.markdown("<div class='placeholder-box'>Camera Feed Placeholder</div>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
         
         st.markdown("</div>", unsafe_allow_html=True)
@@ -120,7 +132,7 @@ def main():
     with st.container():
         st.markdown("<div class='button-container'>", unsafe_allow_html=True)
         
-        # Add back all your buttons
+        # First row of buttons
         col1, col2, col3 = st.columns([1,1,1])
         
         with col1:
@@ -138,6 +150,7 @@ def main():
                      use_container_width=True,
                      on_click=lambda: process_selection("Gloves", status_container))
 
+        # Second row of buttons
         col4, col5, col6 = st.columns([1,1,1])
         
         with col4:
@@ -149,46 +162,48 @@ def main():
             st.button("Earplugs 🎧", key="earplugs",
                      use_container_width=True,
                      on_click=lambda: process_selection("Earplugs", status_container))
-
-        # Detection toggle and override
-        col7, col8, col9 = st.columns([1,1,1])
-        with col7:
-            if st.toggle('Enable Detection', value=False, key='detection_toggle'):
-                camera_handler.enable_detection(True)
-            else:
-                camera_handler.enable_detection(False)
         
-        with col9:
+        with col6:
             st.button("OVERRIDE", key="override", 
                      help="Administrative Override",
                      type="primary",
                      use_container_width=True,
                      on_click=lambda: process_selection("Override", status_container))
+
+        # Detection toggle in its own row
+        col7, col8, col9 = st.columns([1,1,1])
+        with col8:  # Centered toggle
+            if st.toggle('Enable Detection', value=False, key='detection_toggle'):
+                # camera_handler.enable_detection(True)
+                pass
+            else:
+                # camera_handler.enable_detection(False)
+                pass
                      
         st.markdown("</div>", unsafe_allow_html=True)
 
     # Modified camera feed update loop
-    while st.session_state.running:
-        try:
-            camera_handler.display_feed(video_placeholder)
-            time.sleep(0.03)  # Small delay to prevent excessive updates
-        except Exception as e:
-            st.error(f"Camera error: {e}")
-            break
+    # while st.session_state.running:
+    #     try:
+    #         camera_handler.display_feed(video_placeholder)
+    #         time.sleep(0.03)  # Small delay to prevent excessive updates
+    #     except Exception as e:
+    #         st.error(f"Camera error: {e}")
+    #         break
 
     if not st.session_state.running:
-        camera_handler.release()
+        # camera_handler.release()
         st.stop()
 
 def process_selection(item, status_container):
     """Handle the PPE item selection and dispensing process"""
     st.session_state.selected_item = item
-    ros_handler = st.session_state.ros_handler
+    # ros_handler = st.session_state.ros_handler  # Comment out
     
     # Check safety gate status before proceeding
-    if not ros_handler.check_safety_gate():
-        status_container.markdown("<div class='status'>Error: Safety gate must be closed</div>", unsafe_allow_html=True)
-        return
+    # if not ros_handler.check_safety_gate():  # Comment out
+    #     status_container.markdown("<div class='status'>Error: Safety gate must be closed</div>", unsafe_allow_html=True)
+    #     return
         
     # Create a new container for the progress bar
     progress_container = st.empty()
@@ -198,30 +213,30 @@ def process_selection(item, status_container):
     status_container.markdown(f"<div class='status'>{status_message}</div>", unsafe_allow_html=True)
     
     # Publish status to ROS
-    ros_handler.publish_status(status_message)
+    # ros_handler.publish_status(status_message)  # Comment out
     
     # Send dispense command to ROS
-    if ros_handler.publish_dispense_command(item):
-        # Use the container for the progress bar
-        with st.spinner(text=None):
-            progress_bar = progress_container.progress(0)
-            for i in range(100):
-                time.sleep(0.01)
-                progress_bar.progress(i + 1, text=f"Processing {i+1}%")
-        
-        status_message = f"Status: {item} dispensed! Please collect."
-    else:
-        status_message = "Status: Failed to communicate with vending machine"
+    # if ros_handler.publish_dispense_command(item):  # Comment out this condition
+    # Use the container for the progress bar
+    with st.spinner(text=None):
+        progress_bar = progress_container.progress(0)
+        for i in range(100):
+            time.sleep(0.01)
+            progress_bar.progress(i + 1, text=f"Processing {i+1}%")
+    
+    status_message = f"Status: {item} dispensed! Please collect."
+    # else:
+    #     status_message = "Status: Failed to communicate with vending machine"
     
     status_container.markdown(f"<div class='status'>{status_message}</div>", unsafe_allow_html=True)
-    ros_handler.publish_status(status_message)
+    # ros_handler.publish_status(status_message)  # Comment out
     
     time.sleep(1)
     progress_container.empty()
     
     status_message = "Status: Ready to dispense..."
     status_container.markdown(f"<div class='status'>{status_message}</div>", unsafe_allow_html=True)
-    ros_handler.publish_status(status_message)
+    # ros_handler.publish_status(status_message)  # Comment out
 
 if __name__ == "__main__":
     main()
