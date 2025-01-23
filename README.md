@@ -1,100 +1,85 @@
 # AI PPE Vending Machine GUI
 
-A Streamlit-based graphical user interface for an AI-powered PPE (Personal Protective Equipment) vending machine. This interface integrates real-time camera feed, YOLO object detection, and ROS communication for controlling the physical vending machine.
+A Streamlit-based graphical user interface for an AI-powered PPE (Personal Protective Equipment) vending machine. This interface features real-time PPE detection status, automated safety gate control, and a vending interface.
 
 ## Features
 
-- Real-time camera feed with YOLO object detection
-- Touch-friendly interface for PPE item selection
-- ROS integration for vending machine control
-- Visual dispensing progress tracking
+- Real-time PPE detection status indicators
+- Automated safety gate control based on PPE detection
+- Touch-friendly interface for PPE dispensing
+- Visual progress tracking for dispensing operations
 - Administrative override capability
-- Clean shutdown system
+- Debug simulation panel for testing
+- Prepared integrations for:
+  - Real-time camera feed with YOLO object detection
+  - ROS communication for vending machine control
+
+## Project Structure
+
+- `mainStreamlitGUI.py`: Original GUI implementation
+- `expStreamlit.py`: Enhanced version with PPE detection status and automated controls
 
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd <project-directory>
 ```
 
 2. Install Python dependencies:
-```bash
-pip install -r requirements.txt
-```
 
-3. Install ROS dependencies (if not already installed):
 ```bash
-sudo apt-get install ros-noetic-desktop-full python3-rospy
+pip install streamlit
 ```
 
 ## Usage
 
-### Testing Without ROS
-The GUI can be run without ROS for testing purposes:
-```bash
-streamlit run "mainStreamlitGUI.py"
-```
-In this mode, ROS commands will be printed to the console instead of being published to ROS topics.
+Run the enhanced GUI:
 
-### Running with ROS
-To run with full ROS integration:
-1. Start ROS core:
 ```bash
-roscore
-```
-2. Launch the GUI:
-```bash
-streamlit run "First Attempt With camera.py"
+streamlit run expStreamlit.py
 ```
 
-## Project Structure
+### Features Overview
 
-- `First Attempt With camera.py`: Main GUI application
-- `camera_handler.py`: Camera feed management
-- `yolo_detector.py`: YOLO object detection integration
-- `ros_handler.py`: ROS communication interface
+1. PPE Detection Status:
+   - Each PPE item shows real-time detection status
+   - Visual indicators (✅ Detected, 🔴 Missing)
+   - Automatic safety gate control
 
-## ROS Communication
+2. Safety Gate Control:
+   - Automatically opens when all PPE detected
+   - Automatically closes if any PPE missing
+   - Status display in main interface
 
-### Published Topics
-- `/ppe_dispense_command`: Commands for dispensing items
-- `/ppe_status`: GUI status updates
+3. Debug Panel:
+   - Simulate PPE detection
+   - Monitor system status
+   - Test vending operations
 
-### Subscribed Topics
-- `/ppe_machine_status`: Vending machine status updates
-
-### Testing ROS Communication
-Monitor topics:
-```bash
-rostopic echo /ppe_dispense_command
-rostopic echo /ppe_status
-```
+4. Administrative Override:
+   - Force all PPE to detected state
+   - Override safety gate control
+   - Reset system state
 
 ## Development
 
-### For GUI Development
-Modify `First Attempt With camera.py` for:
-- UI changes
-- New features
-- Event handling
+### Current Status
+- Basic GUI functionality implemented
+- PPE detection simulation working
+- Automated safety gate control
+- Status indicators for all PPE items
 
-### For ROS Integration
-Modify `ros_handler.py` for:
-- New ROS topics
-- Custom message types
-- Additional callbacks
-
-### For Computer Vision
-Modify `yolo_detector.py` for:
-- YOLO model integration
-- Detection parameters
-- Processing pipeline
+### Future Integrations
+- Camera feed with YOLO detection
+- ROS communication for physical vending
+- User authentication for override
+- Logging system
 
 ## Team
 
-- GUI Development: [Max Chen]
-
+- GUI Development: Max Chen
 
 ## License
