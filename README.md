@@ -1,23 +1,41 @@
 # AI PPE Vending Machine GUI
 
-A Streamlit-based graphical user interface for an AI-powered PPE (Personal Protective Equipment) vending machine. This interface features real-time PPE detection status, automated safety gate control, and a vending interface.
+A PyQt5-based graphical user interface for an AI-powered PPE (Personal Protective Equipment) vending machine. This interface features real-time PPE detection status, automated safety gate control, and a vending interface integrated with ROS2.
 
 ## Features
 
-- Real-time PPE detection status indicators
-- Automated safety gate control based on PPE detection
+### Core Functionality
+- Real-time PPE detection status indicators for:
+  - Hard Hat
+  - Beard Net
+  - Gloves
+  - Safety Glasses
+  - Ear Plugs
+- Automated safety gate control based on PPE detection status
 - Touch-friendly interface for PPE dispensing
-- Visual progress tracking for dispensing operations
-- Administrative override capability
-- Debug simulation panel for testing
-- Prepared integrations for:
-  - Real-time camera feed with YOLO object detection
-  - ROS communication for vending machine control
+- ROS2 integration for vending machine control
+- Administrative override capability with safety confirmation
+
+### Safety Features
+- Visual status indicators (O/X) for each PPE item
+- Color-coded status display (green for detected, red for missing)
+- Safety gate status display with automatic locking/unlocking
+- Dispense cooldown timer to prevent rapid requests
+- 10-second override timer with countdown display
+
+### System Integration
+- ROS2 publishers and subscribers for:
+  - PPE detection status (`ppe_status` topic)
+  - Dispense requests (`pleaseDispense` topic)
+  - Gate control status (`gate` topic)
+- Real-time status updates and feedback
+- Threaded ROS2 communication
 
 ## Project Structure
 
-- `mainStreamlitGUI.py`: Original GUI implementation
-- `expStreamlit.py`: Enhanced version with PPE detection status and automated controls
+- `PyQt5/`
+  - `ppe_gui.py`: Main GUI implementation with ROS2 integration
+  - `dummy_ppe_status.py`: Test publisher for simulating PPE detection
 
 ## Installation
 
@@ -28,55 +46,72 @@ git clone <repository-url>
 cd <project-directory>
 ```
 
-2. Install Python dependencies:
+2. Install dependencies:
 
 ```bash
-pip install streamlit
+pip install PyQt5 rclpy
+```
+
+3. Set up ROS2 environment:
+
+```bash
+source /opt/ros/<ros-distro>/setup.bash
 ```
 
 ## Usage
 
-Run the enhanced GUI:
+1. Start the ROS2 core:
 
 ```bash
-streamlit run expStreamlit.py
+ros2 run
 ```
 
-### Features Overview
+2. Run the GUI:
 
-1. PPE Detection Status:
-   - Each PPE item shows real-time detection status
-   - Visual indicators (✅ Detected, 🔴 Missing)
+```bash
+python3 PyQt5/ppe_gui.py
+```
+
+3. For testing, run the dummy PPE status publisher:
+
+```bash
+python3 PyQt5/dummy_ppe_status.py
+```
+
+### Interface Overview
+
+1. Main Display:
+   - Title and status message
+   - Safety gate status indicator
+   - Camera feed placeholder
+   - PPE status grid with dispense buttons
+   - Override control with countdown
+
+2. Status Indicators:
+   - Real-time PPE detection status
+   - Gate lock/unlock status
+   - System messages and warnings
+   - Override countdown timer
+
+3. Control Features:
+   - Individual PPE dispense buttons
+   - Administrative override with confirmation
    - Automatic safety gate control
-
-2. Safety Gate Control:
-   - Automatically opens when all PPE detected
-   - Automatically closes if any PPE missing
-   - Status display in main interface
-
-3. Debug Panel:
-   - Simulate PPE detection
-   - Monitor system status
-   - Test vending operations
-
-4. Administrative Override:
-   - Force all PPE to detected state
-   - Override safety gate control
-   - Reset system state
+   - Visual feedback for all operations
 
 ## Development
 
 ### Current Status
-- Basic GUI functionality implemented
-- PPE detection simulation working
-- Automated safety gate control
-- Status indicators for all PPE items
+- Complete GUI implementation with PyQt5
+- Full ROS2 integration
+- Working safety controls and override system
+- Simulation support for testing
 
 ### Future Integrations
-- Camera feed with YOLO detection
-- ROS communication for physical vending
-- User authentication for override
-- Logging system
+- Live camera feed integration
+- User authentication system
+- Enhanced logging and monitoring
+- Additional safety features
 
 ## Team
 

@@ -1,6 +1,6 @@
 import cv2
 import streamlit as st
-from yolo_detector import YOLODetector
+from capstone_T54_gui.Streamlit.yolo_detector import YOLODetector
 import threading
 import time
 
