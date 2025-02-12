@@ -116,5 +116,3 @@ python3 PyQt5/dummy_ppe_status.py
 ## Team
 
 - GUI Development: Max Chen
-
-## License
