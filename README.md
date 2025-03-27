@@ -1,1 +1,0 @@
-Refer to the [gui_package repository](https://github.com/ckyb63/ppe_gui_package/blob/main/README.md) for more information. This is a code scripts backup repository. 
