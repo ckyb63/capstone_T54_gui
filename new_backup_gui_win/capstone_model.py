@@ -14,7 +14,7 @@ def run_detection(callback):
     model = YOLO(r'C:\Users\maxch\Documents\Purdue Files\2024 Fall\ENGT 480\GitHub\capstone_T54_gui\new_backup_gui_win\best.pt')
     
     # Initialize video capture
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
     
     # Report initial camera status
     if not cap.isOpened():
