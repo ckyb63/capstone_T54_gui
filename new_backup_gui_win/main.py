@@ -55,9 +55,11 @@ class MainWindow(QMainWindow):
             }
         """)
         
-        title = QLabel("PPE Vending Machine")
-        title.setAlignment(Qt.AlignCenter)
-        title.setFont(QFont('Arial', 24, QFont.Bold))
+        # Title that will also serve as camera status
+        self.title = QLabel("PPE Vending Machine")
+        self.title.setAlignment(Qt.AlignCenter)
+        self.title.setFont(QFont('Arial', 24, QFont.Bold))
+        self.title.setStyleSheet("color: #FF9500;")  # Initial orange color for "initializing"
         
         settings_button = QPushButton("⚙")
         settings_button.setFixedSize(40, 40)  # Fixed size for circular button
@@ -89,7 +91,7 @@ class MainWindow(QMainWindow):
         
         header_layout.addWidget(help_button)
         header_layout.addStretch(1)  # Add stretch before title
-        header_layout.addWidget(title)
+        header_layout.addWidget(self.title)
         header_layout.addStretch(1)  # Add stretch after title
         header_layout.addWidget(settings_button)
         header_layout.addWidget(close_button)
@@ -113,12 +115,6 @@ class MainWindow(QMainWindow):
         gate_status.setStyleSheet("color: red;")
         gate_status.setAlignment(Qt.AlignCenter)
         
-        # Camera status
-        self.camera_status = QLabel("Camera: Initializing...")
-        self.camera_status.setFont(QFont('Arial', 18, QFont.Bold))
-        self.camera_status.setStyleSheet("color: #FF9500;")
-        self.camera_status.setAlignment(Qt.AlignCenter)
-        
         separator = QWidget()
         separator.setFixedHeight(1)
         separator.setStyleSheet("background-color: #e0e0e0;")
@@ -128,7 +124,6 @@ class MainWindow(QMainWindow):
         dispensing_status.setFont(QFont('Arial', 16))
         
         status_layout.addWidget(gate_status)
-        status_layout.addWidget(self.camera_status)
         status_layout.addWidget(separator)
         status_layout.addWidget(dispensing_status)
         
@@ -231,13 +226,11 @@ class MainWindow(QMainWindow):
                         """)
 
     def update_camera_status(self, is_connected):
-        """Update camera status indicator"""
+        """Update title color based on camera status"""
         if is_connected:
-            self.camera_status.setText("Camera: Connected")
-            self.camera_status.setStyleSheet("color: #4CAF50;")
+            self.title.setStyleSheet("color: #4CAF50;")  # Green for connected
         else:
-            self.camera_status.setText("Camera: Disconnected")
-            self.camera_status.setStyleSheet("color: #ff6b6b;")
+            self.title.setStyleSheet("color: #ff6b6b;")  # Red for disconnected
 
     def close_application(self):
         """Handle application shutdown"""
