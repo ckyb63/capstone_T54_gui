@@ -99,15 +99,50 @@ class AvendGUI(QMainWindow):
         quick_dispense_group = QGroupBox("Quick Dispense")
         quick_dispense_layout = QGridLayout()
         
-        # Create a 5x5 grid of number buttons
+        # Create a keypad with A-G rows and 1-9 columns, plus special keys
         self.quick_buttons = []
-        for i in range(5):
-            for j in range(5):
-                num = i * 5 + j + 1
-                btn = QPushButton(str(num).zfill(2))
-                btn.clicked.connect(lambda checked, code=str(num).zfill(2): self.quick_dispense(code))
-                quick_dispense_layout.addWidget(btn, i, j)
+        
+        # Row labels (A-G)
+        row_labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+        
+        # Create row label buttons
+        for i, label in enumerate(row_labels):
+            btn = QPushButton(label)
+            btn.setEnabled(False)  # Make row labels non-clickable
+            btn.setStyleSheet("background-color: #e0e0e0;")
+            quick_dispense_layout.addWidget(btn, i+1, 0)
+        
+        # Create column label buttons (1-9)
+        for j in range(1, 10):
+            btn = QPushButton(str(j))
+            btn.setEnabled(False)  # Make column labels non-clickable
+            btn.setStyleSheet("background-color: #e0e0e0;")
+            quick_dispense_layout.addWidget(btn, 0, j)
+        
+        # Create the combination buttons (A1-G9)
+        for i, row_label in enumerate(row_labels):
+            for j in range(1, 10):
+                code = f"{row_label}{j}"
+                btn = QPushButton(code)
+                btn.clicked.connect(lambda checked, code=code: self.quick_dispense(code))
+                quick_dispense_layout.addWidget(btn, i+1, j)
                 self.quick_buttons.append(btn)
+        
+        # Add special buttons (0, *, #, H, J) in an additional row
+        special_keys = ['0', '*', '#', 'H', 'J']
+        for j, key in enumerate(special_keys):
+            # Use HTML URL encoding for special characters in the API call
+            display_key = key
+            api_key = key
+            if key == '*':
+                api_key = '%2A'  # URL encoded asterisk
+            elif key == '#':
+                api_key = '%23'  # URL encoded hash
+            
+            btn = QPushButton(display_key)
+            btn.clicked.connect(lambda checked, code=api_key: self.quick_dispense(code))
+            quick_dispense_layout.addWidget(btn, len(row_labels)+1, j+1)
+            self.quick_buttons.append(btn)
         
         quick_dispense_group.setLayout(quick_dispense_layout)
         
@@ -277,5 +312,5 @@ class AvendGUI(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = AvendGUI()
-    window.show()
+    window.showMaximized()
     sys.exit(app.exec())
