@@ -153,19 +153,20 @@ def avend_api():
 def index():
     """Return a simple HTML page with information about the mock server"""
     active_session = get_active_session()
+    active_sessions_count = len([s for s in sessions.values() if not s.is_expired()])
     
-    html = """
+    html = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <title>AVend Mock Server</title>
         <style>
-            body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-            h1 { color: #333; }
-            h2 { color: #555; }
-            pre { background-color: #f5f5f5; padding: 10px; border-radius: 5px; }
-            .endpoint { background-color: #e9f7fe; padding: 10px; margin: 10px 0; border-radius: 5px; }
-            .cart-item { background-color: #f0f0f0; padding: 5px; margin: 2px; display: inline-block; border-radius: 3px; }
+            body {{ font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }}
+            h1 {{ color: #333; }}
+            h2 {{ color: #555; }}
+            pre {{ background-color: #f5f5f5; padding: 10px; border-radius: 5px; }}
+            .endpoint {{ background-color: #e9f7fe; padding: 10px; margin: 10px 0; border-radius: 5px; }}
+            .cart-item {{ background-color: #f0f0f0; padding: 5px; margin: 2px; display: inline-block; border-radius: 3px; }}
         </style>
     </head>
     <body>
@@ -173,16 +174,20 @@ def index():
         <p>This is a mock server that simulates the AVend Local Dispense API.</p>
         
         <h2>Server Status</h2>
-        <p>Active Sessions: {active_sessions}</p>
+        <p>Active Sessions: {active_sessions_count}</p>
     """
     
     if active_session:
+        created_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(active_session.created_at))
+        last_activity_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(active_session.last_activity))
+        cart_empty_text = 'None' if not active_session.cart else ''
+        
         html += f"""
         <h2>Current Active Session</h2>
         <p>Session ID: {active_session.id}</p>
-        <p>Created: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(active_session.created_at))}</p>
-        <p>Last Activity: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(active_session.last_activity))}</p>
-        <p>Cart Items: {'None' if not active_session.cart else ''}</p>
+        <p>Created: {created_time}</p>
+        <p>Last Activity: {last_activity_time}</p>
+        <p>Cart Items: {cart_empty_text}</p>
         """
         
         if active_session.cart:
@@ -231,7 +236,7 @@ def index():
     </html>
     """
     
-    return html.format(active_sessions=len([s for s in sessions.values() if not s.is_expired()]))
+    return html
 
 
 if __name__ == '__main__':
