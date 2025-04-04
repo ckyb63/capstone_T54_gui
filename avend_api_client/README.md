@@ -14,24 +14,24 @@ A PySide6-based GUI application for interacting with the AVend Local Dispense AP
 ## Requirements
 
 - Python 3.6+
-- PySide6
+- PySide6 (6.9.0)
 - Requests
 
 ## Installation
 
 1. Install the required dependencies:
 
-```
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 ## Usage
 
 1. Run the GUI application:
 
-```
-python avend_gui.py
-```
+   ```bash
+   python avend_gui.py
+   ```
 
 2. Configure the connection settings (default: 127.0.0.1:8080)
 3. Click "Connect" to initialize the API client
