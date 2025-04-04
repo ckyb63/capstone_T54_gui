@@ -30,7 +30,7 @@ class AvendGUI(QMainWindow):
         connection_group = QGroupBox("Connection Settings")
         connection_layout = QFormLayout()
         
-        self.host_input = QLineEdit("127.0.0.1")
+        self.host_input = QLineEdit("10.165.101.252")
         self.port_input = QSpinBox()
         self.port_input.setRange(1, 65535)
         self.port_input.setValue(8080)
