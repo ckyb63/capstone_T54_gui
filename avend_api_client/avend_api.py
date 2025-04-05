@@ -1,11 +1,16 @@
+"""
+Python Client for the AVend Local Dispense API
+Max Chen - v0.3.0
+"""
+
 import requests
 
 class AvendAPI:
-    def __init__(self, host="127.0.0.1", port=8080):
+    def __init__(self, host="127.0.0.1", port=8080): # Defaults with the set LocalHost and Port
         self.base_url = f"http://{host}:{port}/avend"
         self.session = requests.Session()  # Keeps cookie between calls
 
-    def start_session(self):
+    def start_session(self): # Start a new session
         params = {"action": "start"}
         try:
             response = self.session.get(self.base_url, params=params)
@@ -13,7 +18,7 @@ class AvendAPI:
         except requests.RequestException as e:
             return {"success": False, "error": str(e)}
 
-    def dispense(self, code=None):
+    def dispense(self, code=None): # Dispense a product by code
         params = {"action": "dispense"}
         if code:
             params["code"] = code
@@ -23,7 +28,7 @@ class AvendAPI:
         except requests.RequestException as e:
             return {"success": False, "error": str(e)}
 
-    def get_info(self):
+    def get_info(self): # Get information about the AVend middleware
         url = f"{self.base_url}/info"
         try:
             response = self.session.get(url)
@@ -31,16 +36,16 @@ class AvendAPI:
         except requests.RequestException as e:
             return {"success": False, "error": str(e)}
 
-    def add_to_cart(self, code):
+    def add_to_cart(self, code): # Add a product to the cart
         return self._post("/cart/add", {"code": code})
 
-    def remove_from_cart(self, code):
+    def remove_from_cart(self, code): # Remove a product from the cart
         return self._post("/cart/remove", {"code": code})
 
-    def clear_cart(self):
+    def clear_cart(self): # Clear the cart
         return self._post("/cart/clear", {})
 
-    def _post(self, path, json_data):
+    def _post(self, path, json_data): # Internal method for POST requests
         url = f"{self.base_url}{path}"
         try:
             response = self.session.post(url, json=json_data)
@@ -48,14 +53,14 @@ class AvendAPI:
         except requests.RequestException as e:
             return {"success": False, "error": str(e)}
 
-    def _format_response(self, response):
+    def _format_response(self, response): # Internal method for formatting responses
         try:
             return {
                 "success": response.ok,
                 "status_code": response.status_code,
                 "response": response.json() if response.content else {}
             }
-        except ValueError:
+        except ValueError: # If the response is not JSON
             return {
                 "success": response.ok,
                 "status_code": response.status_code,

@@ -1,7 +1,12 @@
+"""
+PySide 6 Client Test Application for the AVend Local Dispense API
+Max Chen - v0.3.0
+"""
+
 import sys
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLineEdit, QLabel, QTextEdit, QGridLayout, QGroupBox,
+    QPushButton, QLineEdit, QTextEdit, QGridLayout, QGroupBox,
     QFormLayout, QSpinBox, QComboBox, QMessageBox
 )
 from PySide6.QtCore import Qt
@@ -30,6 +35,7 @@ class AvendGUI(QMainWindow):
         connection_group = QGroupBox("Connection Settings")
         connection_layout = QFormLayout()
         
+        # Add connection settings
         self.host_input = QLineEdit("10.165.101.252")
         self.port_input = QSpinBox()
         self.port_input.setRange(1, 65535)
@@ -46,6 +52,7 @@ class AvendGUI(QMainWindow):
         session_group = QGroupBox("Session Control")
         session_layout = QVBoxLayout()
         
+        # Add session control buttons
         self.start_session_button = QPushButton("Start Session")
         self.start_session_button.clicked.connect(self.start_session)
         self.get_info_button = QPushButton("Get Info")
@@ -59,6 +66,7 @@ class AvendGUI(QMainWindow):
         dispense_group = QGroupBox("Dispense Controls")
         dispense_layout = QFormLayout()
         
+        # Add dispense controls
         self.dispense_code_input = QLineEdit()
         self.dispense_mode_combo = QComboBox()
         self.dispense_mode_combo.addItems(["double", "single"])
@@ -74,6 +82,7 @@ class AvendGUI(QMainWindow):
         cart_group = QGroupBox("Cart Controls")
         cart_layout = QFormLayout()
         
+        # Add cart controls
         self.cart_code_input = QLineEdit()
         
         cart_buttons_layout = QHBoxLayout()
@@ -99,27 +108,27 @@ class AvendGUI(QMainWindow):
         quick_dispense_group = QGroupBox("Quick Dispense")
         quick_dispense_layout = QGridLayout()
         
-        # Create a keypad with A-G rows and 1-9 columns, plus special keys
+        # Add quick dispense keypad
         self.quick_buttons = []
         
         # Row labels (A-G)
         row_labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
         
-        # Create row label buttons
+        # Add row label buttons
         for i, label in enumerate(row_labels):
             btn = QPushButton(label)
             btn.setEnabled(False)  # Make row labels non-clickable
             btn.setStyleSheet("background-color: #e0e0e0;")
             quick_dispense_layout.addWidget(btn, i+1, 0)
         
-        # Create column label buttons (1-9)
+        # Add column label buttons (1-9)
         for j in range(1, 10):
             btn = QPushButton(str(j))
             btn.setEnabled(False)  # Make column labels non-clickable
             btn.setStyleSheet("background-color: #e0e0e0;")
             quick_dispense_layout.addWidget(btn, 0, j)
         
-        # Create the combination buttons (A1-G9)
+        # Add combination buttons (A1-G9)
         for i, row_label in enumerate(row_labels):
             for j in range(1, 10):
                 code = f"{row_label}{j}"
@@ -146,7 +155,7 @@ class AvendGUI(QMainWindow):
         
         quick_dispense_group.setLayout(quick_dispense_layout)
         
-        # Log area
+        # Add log area
         log_group = QGroupBox("Response Log")
         log_layout = QVBoxLayout()
         

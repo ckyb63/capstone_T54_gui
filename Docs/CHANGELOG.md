@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.0] - 2025-April-04
+
+- Added per session Cookie in the API code.
+- Tested with actual kit over ethernet IP successfully.
+
 ## [0.2.0] - 2025-April-03
 
 - Updated to PySide6
