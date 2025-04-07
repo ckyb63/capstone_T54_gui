@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0] - 2025-April-07
+
+- Fixed Camera Detection using OpenCV
+- Added Service Routine (H1) which will help constantly trigger the vending machine service mode.
+- Check code for the logic, it is set to send "H1" every 20 seconds and the routine starts after first dispense request which is intended as for when the vending machine is set up.
+- Fixed GUI status display
+
 ## [0.6.0] - 2025-April-07
 
 - Renamed and Fully Updated Avend Mock Server, now uses JS to update the dashboard, as well as styling to be more modern and nicer.
