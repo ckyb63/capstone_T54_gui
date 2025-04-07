@@ -7,6 +7,8 @@ from flask import Flask, request, jsonify
 import time
 import logging
 import uuid
+from collections import deque
+import datetime
 
 app = Flask(__name__)
 
@@ -16,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 # Store active sessions and carts
 sessions = {}
+
+# Store request history (last 50 requests)
+request_history = deque(maxlen=50)
 
 class Session:
     def __init__(self):
@@ -66,6 +71,20 @@ def avend_api():
     action = request.args.get('action')
     code = request.args.get('code')
     mode = request.args.get('mode', 'double')
+    
+    # Log the request with timestamp
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+    client_ip = request.remote_addr
+    request_info = {
+        "timestamp": timestamp,
+        "client_ip": client_ip,
+        "action": action,
+        "code": code,
+        "mode": mode,
+        "path": request.path,
+        "args": dict(request.args)
+    }
+    request_history.appendleft(request_info)
     
     logger.info(f"Received request: action={action}, code={code}, mode={mode}")
     
@@ -165,6 +184,7 @@ def index():
     <html>
     <head>
         <title>AVend Mock Server</title>
+        <meta http-equiv="refresh" content="3"> <!-- Auto-refresh every 3 seconds -->
         <style>
             body {{ font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }}
             h1 {{ color: #333; }}
@@ -172,14 +192,25 @@ def index():
             pre {{ background-color: #f5f5f5; padding: 10px; border-radius: 5px; }}
             .endpoint {{ background-color: #e9f7fe; padding: 10px; margin: 10px 0; border-radius: 5px; }}
             .cart-item {{ background-color: #f0f0f0; padding: 5px; margin: 2px; display: inline-block; border-radius: 3px; }}
+            table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
+            th, td {{ padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }}
+            th {{ background-color: #f2f2f2; }}
+            tr:hover {{ background-color: #f5f5f5; }}
+            .timestamp {{ color: #666; font-size: 0.9em; }}
+            .action {{ font-weight: bold; }}
+            .success {{ color: green; }}
+            .error {{ color: red; }}
+            .auto-refresh {{ float: right; color: #666; font-size: 0.8em; margin-top: 10px; }}
         </style>
     </head>
     <body>
         <h1>AVend Mock Server</h1>
+        <p class="auto-refresh">Auto-refreshing every 3 seconds</p>
         <p>This is a mock server that simulates the AVend Local Dispense API.</p>
         
         <h2>Server Status</h2>
         <p>Active Sessions: {active_sessions_count}</p>
+        <p>Server Time: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
     """
     
     if active_session:
@@ -200,6 +231,53 @@ def index():
             for item in active_session.cart:
                 html += f'<span class="cart-item">{item}</span>'
             html += "</div>"
+    
+    # Add request history section
+    html += """
+        <h2>Request History</h2>
+        <table>
+            <tr>
+                <th>Time</th>
+                <th>Client IP</th>
+                <th>Action</th>
+                <th>Code</th>
+                <th>Details</th>
+            </tr>
+    """
+    
+    # Add each request to the table
+    if request_history:
+        for req in request_history:
+            action = req.get('action', '-')
+            code = req.get('code', '-')
+            timestamp = req.get('timestamp', '-')
+            client_ip = req.get('client_ip', '-')
+            args = req.get('args', {})
+            
+            # Format args as a string, excluding action and code which are already displayed
+            args_str = ', '.join([f"{k}={v}" for k, v in args.items() if k not in ['action', 'code']])
+            if args_str:
+                details = args_str
+            else:
+                details = '-'
+            
+            html += f"""
+            <tr>
+                <td class="timestamp">{timestamp}</td>
+                <td>{client_ip}</td>
+                <td class="action">{action}</td>
+                <td>{code}</td>
+                <td>{details}</td>
+            </tr>
+            """
+    else:
+        html += """
+            <tr>
+                <td colspan="5" style="text-align: center;">No requests received yet</td>
+            </tr>
+        """
+    
+    html += "</table>"
     
     html += """
         <h2>API Endpoints</h2>

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.0] - 2025-April-07
+
+- Added IP Config to the Backup GUI
+- Integrated PPE Buttons with the API
+- Mock Server to display request history and details, also enabled auto-refresh every 3 seconds.
+
 ## [0.3.0] - 2025-April-04
 
 - Added per session Cookie in the API code.
