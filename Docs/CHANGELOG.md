@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.6.0] - 2025-April-07
+
+- Renamed and Fully Updated Avend Mock Server, now uses JS to update the dashboard, as well as styling to be more modern and nicer.
+
 ## [0.5.0] - 2025-April-07
 
 - Added IP Config to the Backup GUI
