@@ -86,6 +86,9 @@ class MainWindow(QMainWindow):
             "gloves": "A5"
         }
         
+        # Flag to track if first manual dispense has been done
+        self.first_dispense_done = False
+        
         # Create central widget and main layout
         central_widget = QWidget()
         central_widget.setStyleSheet("background-color: white;")
@@ -339,10 +342,14 @@ class MainWindow(QMainWindow):
 
     def update_button_states(self, detection_states):
         """Update button colors based on detection states"""
+        print(f"Received detection states: {detection_states}")
         for key, detected in detection_states.items():
+            print(f"Processing key: {key}, detected: {detected}")
             if key in self.ppe_buttons:
                 button = self.ppe_buttons[key]
+                print(f"Found button for {key}: {button.text()}")
                 if detected:
+                    print(f"Setting {key} button to GREEN (detected)")
                     button.setStyleSheet("""
                         QPushButton {
                             background-color: #4CAF50;
@@ -355,6 +362,7 @@ class MainWindow(QMainWindow):
                     """)
                 else:
                     if key == "override":
+                        print(f"Setting override button to ORANGE")
                         button.setStyleSheet("""
                             QPushButton {
                                 background-color: #FF9500;
@@ -366,6 +374,7 @@ class MainWindow(QMainWindow):
                             }
                         """)
                     else:
+                        print(f"Setting {key} button to RED (not detected)")
                         button.setStyleSheet("""
                             QPushButton {
                                 background-color: #ff6b6b;
@@ -376,6 +385,8 @@ class MainWindow(QMainWindow):
                                 font-weight: bold;
                             }
                         """)
+            else:
+                print(f"Warning: No button found for key {key}")
 
     def update_camera_status(self, is_connected):
         """Update title color based on camera status"""
@@ -467,6 +478,12 @@ class MainWindow(QMainWindow):
             self.dispensing_status.setText(f"Successfully dispensed {code}")
             self.dispensing_status.setStyleSheet("color: #4CAF50;")
             
+            # Check if this is the first manual dispense
+            if not self.first_dispense_done:
+                self.first_dispense_done = True
+                # Call H1 Service routine after first manual dispense
+                self.call_h1_service()
+            
             # Reset status after 3 seconds
             QTimer.singleShot(3000, lambda: self.reset_status())
         else:
@@ -474,6 +491,35 @@ class MainWindow(QMainWindow):
             self.dispensing_status.setText(f"Error: Failed to dispense {code}")
             self.dispensing_status.setStyleSheet("color: #FF3B30;")
             
+    def call_h1_service(self):
+        """Start the H1 Service routine that runs every 20 seconds"""
+        try:
+            # Add a message that we're about to start the service routine
+            self.dispensing_status.setText("Starting H1 Service routine...")
+            self.dispensing_status.setStyleSheet("color: #FF9500;")
+            
+            # Add a delay before starting the service routine (3 seconds)
+            QTimer.singleShot(3000, self._start_h1_service_routine)
+            
+            print("H1 Service routine will start in 3 seconds")
+        except Exception as e:
+            print(f"Exception in H1 Service routine setup: {str(e)}")
+    
+    def _start_h1_service_routine(self):
+        """Actually start the H1 Service routine after delay"""
+        try:
+            # Start the service routine that will call H1 every 20 seconds
+            service_response = self.api.start_service_routine()
+            
+            if service_response.get("success", False):
+                print("Successfully started H1 Service routine")
+                self.dispensing_status.setText("H1 Service routine started (running every 20s)")
+                self.dispensing_status.setStyleSheet("color: #4CAF50;")
+            else:
+                print(f"Error starting H1 Service routine: {service_response.get('error', 'Unknown error')}")
+        except Exception as e:
+            print(f"Exception in H1 Service routine: {str(e)}")
+    
     def reset_status(self):
         """Reset the dispensing status to the default message"""
         self.dispensing_status.setText("Ready to dispense...")
@@ -498,6 +544,14 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'detection_thread'):
             self.detection_thread.stop()
             self.detection_thread.wait()
+            
+        # Stop the H1 service routine if it's running
+        try:
+            self.api.stop_service_routine()
+            print("H1 Service routine stopped")
+        except Exception as e:
+            print(f"Error stopping H1 Service routine: {str(e)}")
+            
         super().closeEvent(event)
 
 if __name__ == '__main__':

@@ -1,15 +1,15 @@
 """
 PySide 6 Client Test Application for the AVend Local Dispense API
-Max Chen - v0.3.0
+Max Chen - v0.3.1
 """
 
 import sys
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLineEdit, QTextEdit, QGridLayout, QGroupBox,
-    QFormLayout, QSpinBox, QComboBox, QMessageBox
+    QFormLayout, QSpinBox, QComboBox, QMessageBox, QLabel
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from avend_api import AvendAPI
 
 class AvendGUI(QMainWindow):
@@ -165,6 +165,34 @@ class AvendGUI(QMainWindow):
         log_layout.addWidget(self.log_text)
         log_group.setLayout(log_layout)
         
+        # Service routine controls
+        service_group = QGroupBox("H1 Service Routine")
+        service_layout = QFormLayout()
+        
+        # Add service routine controls
+        self.service_interval_input = QSpinBox()
+        self.service_interval_input.setRange(1, 60)
+        self.service_interval_input.setValue(15)  # Default to 15 seconds
+        self.service_interval_input.setSuffix(" seconds")
+        
+        self.service_status_label = QLabel("Status: Not running")
+        
+        service_buttons_layout = QHBoxLayout()
+        self.start_service_button = QPushButton("Start H1 Service")
+        self.start_service_button.clicked.connect(self.start_service_routine)
+        self.stop_service_button = QPushButton("Stop H1 Service")
+        self.stop_service_button.clicked.connect(self.stop_service_routine)
+        self.stop_service_button.setEnabled(False)
+        
+        service_buttons_layout.addWidget(self.start_service_button)
+        service_buttons_layout.addWidget(self.stop_service_button)
+        
+        service_layout.addRow("Interval:", self.service_interval_input)
+        service_layout.addRow("Status:", self.service_status_label)
+        service_layout.addRow("", service_buttons_layout)
+        
+        service_group.setLayout(service_layout)
+        
         # Add all groups to main layout
         top_layout = QHBoxLayout()
         top_layout.addWidget(connection_group)
@@ -173,6 +201,7 @@ class AvendGUI(QMainWindow):
         middle_layout = QHBoxLayout()
         middle_layout.addWidget(dispense_group)
         middle_layout.addWidget(cart_group)
+        middle_layout.addWidget(service_group)
         
         main_layout.addLayout(top_layout)
         main_layout.addLayout(middle_layout)
@@ -316,6 +345,36 @@ class AvendGUI(QMainWindow):
             error_msg = dispense_response.get("error", f"Status code: {dispense_response.get('status_code')}")
             self.log_message(f"Failed to dispense: {error_msg}")
             QMessageBox.warning(self, "Dispense Error", f"Failed to dispense: {error_msg}")
+            
+    def start_service_routine(self):
+        """Start the H1 service routine"""
+        interval = self.service_interval_input.value()
+        
+        self.log_message(f"Starting H1 service routine (interval: {interval}s, running indefinitely)...")
+        response = self.api.start_service_routine(interval=interval)
+        
+        if response.get("success", False):
+            self.log_message(f"Service routine started: {response.get('message', '')}")
+            self.service_status_label.setText("Status: Running (indefinitely)")
+            self.start_service_button.setEnabled(False)
+            self.stop_service_button.setEnabled(True)
+        else:
+            self.log_message(f"Failed to start service routine: {response.get('error', '')}")
+    
+    def stop_service_routine(self):
+        """Stop the H1 service routine"""
+        self.log_message("Stopping H1 service routine...")
+        response = self.api.stop_service_routine()
+        
+        if response.get("success", False):
+            self.log_message(f"Service routine stopped: {response.get('message', '')}")
+            self.service_routine_completed()
+    
+    def service_routine_completed(self):
+        """Called when the service routine completes"""
+        self.service_status_label.setText("Status: Not running")
+        self.start_service_button.setEnabled(True)
+        self.stop_service_button.setEnabled(False)
 
 
 if __name__ == "__main__":
