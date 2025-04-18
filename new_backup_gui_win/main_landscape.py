@@ -81,8 +81,11 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("PPE Vending Machine")
-        # Remove fixed size and set minimum size instead
+        # Set minimum size and allow maximization
         self.setMinimumSize(1024, 600)  # Landscape size as minimum
+        self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowSystemMenuHint | 
+                          Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | 
+                          Qt.WindowCloseButtonHint)
         
         # Initialize AVend API with default values
         self.api = AvendAPI()
@@ -99,9 +102,6 @@ class MainWindow(QMainWindow):
         self.secondary_color = "#FFA500"
         self.success_color = "#34C759"
         self.danger_color = "#FF3B30"
-        
-        # Set window style - remove CustomizeWindowHint to allow maximize button
-        self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowSystemMenuHint | Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
         
         # Center the window on screen
         screen = QApplication.primaryScreen().geometry()
@@ -239,7 +239,7 @@ class MainWindow(QMainWindow):
         help_layout.setContentsMargins(30, 30, 30, 30)  # Added margins around the entire layout
         
         # Help title
-        help_title = QLabel("Help & Information")
+        help_title = QLabel("Help")
         help_title.setFont(QFont('Arial', 24, QFont.Bold))
         help_title.setAlignment(Qt.AlignCenter)
         help_title.setStyleSheet("QLabel { color: #2C3E50; padding: 20px; }")
@@ -261,7 +261,7 @@ class MainWindow(QMainWindow):
         help_content = """PPE Detection:
 • The AI detects required PPE using the camera.
 • Rotate your head slightly to ensure all PPE is visible.
-• Green buttons (O) indicate detected PPE; red buttons (X) indicate missing PPE.
+• Green buttons indicate detected PPE; red buttons indicate missing PPE.
 
 Dispensing PPE:
 • Click on the PPE item to dispense if you do not have it.
@@ -269,7 +269,8 @@ Dispensing PPE:
 
 Safety Override:
 • Use the orange OVERRIDE button for emergency or administrative overrides.
-• All overrides are logged with the user, reason, and timestamp."""
+• It will open the safety gate.
+"""
 
         help_text.setText(help_content)
         
@@ -453,45 +454,45 @@ Safety Override:
         
         # Button grid
         button_grid = QGridLayout()
-        button_grid.setSpacing(20)
+        button_grid.setSpacing(20)  # Increased spacing between buttons
         
         # Configure buttons
         buttons_config = [
-            ("Hard Hat", "hardhat", 0, 0),
-            ("Beard Net", "beardnet", 0, 1),
-            ("Gloves", "gloves", 1, 0),
-            ("Safety Glasses", "glasses", 1, 1),
-            ("Ear Plugs", "earplugs", 2, 0),
+            ("Hard Hat (A1)", "hardhat", 0, 0),
+            ("Beard Net (A3)", "beardnet", 0, 1),
+            ("Gloves (A5)", "gloves", 1, 0),
+            ("Safety Glasses (A2)", "glasses", 1, 1),
+            ("Ear Plugs (A4)", "earplugs", 2, 0),
             ("OVERRIDE", "override", 2, 1)
         ]
         
         self.ppe_buttons = {}
         for label, key, row, col in buttons_config:
             button = QPushButton(label)
-            button.setFixedSize(180, 120)
+            button.setFixedSize(180, 110)  # Reduced button size
             
             if key == "override":
                 button.setStyleSheet(f"""
                     QPushButton {{
                         background-color: {self.secondary_color};
                         color: white;
-                        border-radius: 15px;
+                        border-radius: 12px;
                         font-size: 20px;
                         font-weight: bold;
                         text-transform: uppercase;
                         border: none;
-                        padding: 10px;
-                        margin: 2px;
+                        padding: 12px;
+                        margin: 4px;
                     }}
                     QPushButton:hover {{
                         background-color: #E59400;
-                        padding: 8px;
-                        margin: 4px;
+                        padding: 10px;
+                        margin: 6px;
                     }}
                     QPushButton:pressed {{
                         background-color: #CC8400;
-                        padding: 10px;
-                        margin: 2px;
+                        padding: 12px;
+                        margin: 4px;
                     }}
                 """)
             else:
@@ -499,22 +500,22 @@ Safety Override:
                     QPushButton {{
                         background-color: {self.primary_color};
                         color: white;
-                        border-radius: 15px;
-                        font-size: 20px;
+                        border-radius: 12px;
+                        font-size: 18px;
                         font-weight: bold;
                         border: none;
-                        padding: 10px;
-                        margin: 2px;
+                        padding: 12px;
+                        margin: 4px;
                     }}
                     QPushButton:hover {{
                         background-color: #FF6B6B;
-                        padding: 8px;
-                        margin: 4px;
+                        padding: 10px;
+                        margin: 6px;
                     }}
                     QPushButton:pressed {{
                         background-color: #FF5252;
-                        padding: 10px;
-                        margin: 2px;
+                        padding: 12px;
+                        margin: 4px;
                     }}
                 """)
             
@@ -580,9 +581,21 @@ Safety Override:
                         QPushButton {{
                             background-color: {self.success_color};
                             color: white;
-                            border-radius: 10px;
-                            font-size: 16px;
+                            border-radius: 12px;
+                            font-size: 18px;
                             font-weight: bold;
+                            padding: 12px;
+                            margin: 4px;
+                        }}
+                        QPushButton:hover {{
+                            background-color: #2CB14F;
+                            padding: 10px;
+                            margin: 6px;
+                        }}
+                        QPushButton:pressed {{
+                            background-color: #248F3F;
+                            padding: 12px;
+                            margin: 4px;
                         }}
                     """)
                 else:
@@ -592,12 +605,21 @@ Safety Override:
                             QPushButton {{
                                 background-color: {self.secondary_color};
                                 color: white;
-                                border-radius: 10px;
-                                font-size: 16px;
+                                border-radius: 12px;
+                                font-size: 20px;
                                 font-weight: bold;
+                                padding: 12px;
+                                margin: 4px;
                             }}
                             QPushButton:hover {{
                                 background-color: #E59400;
+                                padding: 10px;
+                                margin: 6px;
+                            }}
+                            QPushButton:pressed {{
+                                background-color: #CC8400;
+                                padding: 12px;
+                                margin: 4px;
                             }}
                         """)
                     else:
@@ -606,12 +628,21 @@ Safety Override:
                             QPushButton {{
                                 background-color: {self.danger_color};
                                 color: white;
-                                border-radius: 10px;
-                                font-size: 16px;
+                                border-radius: 12px;
+                                font-size: 18px;
                                 font-weight: bold;
+                                padding: 12px;
+                                margin: 4px;
                             }}
                             QPushButton:hover {{
                                 background-color: #CC2A25;
+                                padding: 10px;
+                                margin: 6px;
+                            }}
+                            QPushButton:pressed {{
+                                background-color: #B32620;
+                                padding: 12px;
+                                margin: 4px;
                             }}
                         """)
             else:
