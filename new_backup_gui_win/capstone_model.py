@@ -18,6 +18,7 @@ CLASS_TO_BUTTON_MAP = {
     'helmet': 'hardhat',
     'glasses': 'glasses',  # This maps the model's 'glasses' class to the GUI's 'glasses' button
     'safety glasses': 'glasses',  # This also maps 'safety glasses' class to the same button
+    'safety_goggles': 'glasses',
     'beardnet': 'beardnet',
     'earplugs': 'earplugs',
     'gloves': 'gloves'
