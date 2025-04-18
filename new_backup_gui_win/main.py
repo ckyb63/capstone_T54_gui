@@ -1,10 +1,11 @@
 import sys
 import os
+import time
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QLabel, QPushButton, QGridLayout,
-                             QLineEdit, QMessageBox)
+                             QLineEdit, QMessageBox, QFrame, QFormLayout)
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QPalette, QColor, QImage, QPixmap
 
 # Import AVend API if available, otherwise create a mock
 try:
@@ -43,13 +44,14 @@ except ImportError:
 class DetectionThread(QThread):
     detection_signal = Signal(dict)  # Signal to send detection results
     camera_status_signal = Signal(bool)  # Signal to send camera status
+    frame_signal = Signal(QImage)  # Signal to send camera frames
 
     def __init__(self):
         super().__init__()
         self.is_running = True
 
     def run(self):
-        def detection_callback(detection_states):
+        def detection_callback(detection_states, frame=None):
             if detection_states is None:
                 self.camera_status_signal.emit(False)
                 # If no camera, create mock detection states where all items are detected
@@ -65,6 +67,14 @@ class DetectionThread(QThread):
             else:
                 self.camera_status_signal.emit(True)
                 self.detection_signal.emit(detection_states)
+                
+                # Convert frame to QImage and emit if available
+                if frame is not None:
+                    height, width, channel = frame.shape
+                    bytes_per_line = 3 * width
+                    q_image = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
+                    self.frame_signal.emit(q_image)
+
         run_detection(detection_callback)
 
     def stop(self):
@@ -74,7 +84,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("PPE Vending Machine")
-        self.setFixedSize(500, 650)  # Reduced size to fit laptop displays
+        self.setFixedSize(600, 800)
         
         # Initialize AVend API with default values
         self.api = AvendAPI()
@@ -86,258 +96,172 @@ class MainWindow(QMainWindow):
             "gloves": "A5"
         }
         
-        # Flag to track if first manual dispense has been done
-        self.first_dispense_done = False
+        # Main color scheme
+        self.primary_color = "#FF7B7B"  # Coral pink for PPE buttons
+        self.secondary_color = "#FFA500"  # Orange for override
+        self.success_color = "#34C759"  # Green
+        self.danger_color = "#FF3B30"  # Red
         
-        # Create central widget and main layout
+        # Set window style to be more classic/retro
+        self.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowTitleHint | Qt.WindowSystemMenuHint | Qt.WindowMinimizeButtonHint | Qt.WindowCloseButtonHint)
+        
+        # Central widget and main layout
         central_widget = QWidget()
-        central_widget.setStyleSheet("background-color: white;")
+        central_widget.setStyleSheet("""
+            QWidget {
+                background-color: #F0F0F0;
+            }
+        """)
         self.setCentralWidget(central_widget)
+        
         main_layout = QVBoxLayout(central_widget)
-        main_layout.setSpacing(20)  # Increase spacing between elements
-        main_layout.setContentsMargins(20, 15, 20, 15)  # Reduced margins
+        main_layout.setSpacing(15)
+        main_layout.setContentsMargins(20, 20, 20, 20)
         
-        # Create header with title and icons
+        # Header with title and buttons
         header_layout = QHBoxLayout()
-        header_layout.setSpacing(20)  # Space between header elements
         
-        help_button = QPushButton("?")
-        help_button.setFixedSize(35, 35)  # Reduced size for circular button
-        help_button.setStyleSheet("""
+        # Help button
+        self.help_button = QPushButton("?")
+        self.help_button.setFixedSize(50, 50)
+        self.help_button.setStyleSheet("""
             QPushButton {
                 background-color: #007AFF;
                 color: white;
-                border-radius: 20px;
-                font-size: 16px;
+                border-radius: 25px;
+                font-size: 24px;
                 font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #0062CC;
             }
         """)
         
-        # Title that will also serve as camera status
+        # Title
         self.title = QLabel("PPE Vending Machine")
         self.title.setAlignment(Qt.AlignCenter)
-        self.title.setFont(QFont('Arial', 20, QFont.Bold))  # Reduced font size
-        self.title.setStyleSheet("color: #FF9500;")  # Initial orange color for "initializing"
+        self.title.setFont(QFont('Arial', 24, QFont.Bold))
+        self.title.setStyleSheet("color: black;")
         
-        settings_button = QPushButton("⚙")
-        settings_button.setFixedSize(35, 35)  # Reduced size for circular button
-        settings_button.setStyleSheet("""
+        # Settings button
+        self.settings_button = QPushButton("⚙")
+        self.settings_button.setFixedSize(50, 50)
+        self.settings_button.setStyleSheet("""
             QPushButton {
                 background-color: #007AFF;
                 color: white;
-                border-radius: 20px;
-                font-size: 16px;
+                border-radius: 25px;
+                font-size: 24px;
                 font-weight: bold;
             }
-        """)
-        settings_button.clicked.connect(self.toggle_settings)
-        
-        header_layout.addWidget(help_button)
-        header_layout.addStretch(1)  # Add stretch before title
-        header_layout.addWidget(self.title)
-        header_layout.addStretch(1)  # Add stretch after title
-        header_layout.addWidget(settings_button)
-        
-        # Create status card
-        status_card = QWidget()
-        status_card.setStyleSheet("""
-            QWidget {
-                background-color: white;
-                border-radius: 10px;
-                border: 1px solid #e0e0e0;
-                padding: 20px;
+            QPushButton:hover {
+                background-color: #0062CC;
             }
         """)
-        status_layout = QVBoxLayout(status_card)
-        status_layout.setSpacing(15)
+        self.settings_button.clicked.connect(self.toggle_settings)
         
-        # Status indicators
+        header_layout.addWidget(self.help_button)
+        header_layout.addStretch(1)
+        header_layout.addWidget(self.title)
+        header_layout.addStretch(1)
+        header_layout.addWidget(self.settings_button)
+        
+        # Status section
+        status_layout = QHBoxLayout()
+        
+        # Gate status
         self.gate_status = QLabel("Gate LOCKED")
-        self.gate_status.setFont(QFont('Arial', 16, QFont.Bold))  # Reduced font size
-        self.gate_status.setStyleSheet("color: red;")
-        self.gate_status.setAlignment(Qt.AlignCenter)
+        self.gate_status.setFont(QFont('Arial', 16, QFont.Bold))
+        self.gate_status.setStyleSheet(f"color: {self.danger_color};")
         
-        separator = QWidget()
-        separator.setFixedHeight(1)
-        separator.setStyleSheet("background-color: #e0e0e0;")
-        
+        # Dispensing status
         self.dispensing_status = QLabel("Ready to dispense...")
-        self.dispensing_status.setAlignment(Qt.AlignCenter)
-        self.dispensing_status.setFont(QFont('Arial', 14))  # Reduced font size
+        self.dispensing_status.setFont(QFont('Arial', 16))
+        self.dispensing_status.setStyleSheet("color: black;")
         
         status_layout.addWidget(self.gate_status)
-        status_layout.addWidget(separator)
+        status_layout.addStretch(1)
         status_layout.addWidget(self.dispensing_status)
         
-        # Create settings panel (hidden by default)
-        self.settings_panel = QWidget()
-        self.settings_panel.setVisible(False)  # Hidden by default
-        self.settings_panel.setStyleSheet("""
-            QWidget {
+        # Camera feed placeholder
+        self.camera_feed = QLabel()
+        self.camera_feed.setFixedHeight(400)
+        self.camera_feed.setStyleSheet("""
+            QLabel {
+                border: 2px dashed #999;
                 background-color: white;
                 border-radius: 10px;
-                border: 1px solid #e0e0e0;
-                padding: 20px;
             }
         """)
-        settings_layout = QVBoxLayout(self.settings_panel)
+        self.camera_feed.setAlignment(Qt.AlignCenter)
+        self.camera_feed.setText("Camera Feed Placeholder")
         
-        # Settings title
-        settings_title = QLabel("Settings")
-        settings_title.setFont(QFont('Arial', 16, QFont.Bold))  # Reduced font size
-        settings_title.setAlignment(Qt.AlignCenter)
-        settings_title.setStyleSheet("color: #333333;")
+        # Button grid
+        button_grid = QGridLayout()
+        button_grid.setSpacing(15)
         
-        # IP Configuration
-        ip_title = QLabel("AVend API Connection")
-        ip_title.setFont(QFont('Arial', 12, QFont.Bold))  # Reduced font size
-        ip_title.setStyleSheet("color: #333333; margin-top: 10px;")
-        
-        # IP form with label and input
-        ip_form_widget = QWidget()
-        ip_form_layout = QHBoxLayout(ip_form_widget)
-        ip_form_layout.setContentsMargins(0, 10, 0, 10)
-        
-        ip_label = QLabel("IP Address:")
-        ip_label.setFont(QFont('Arial', 12))
-        ip_label.setStyleSheet("color: #333333;")
-        ip_label.setFixedWidth(100)
-        
-        self.ip_input = QLineEdit("127.0.0.1")
-        self.ip_input.setPlaceholderText("Enter AVend IP address")
-        self.ip_input.setStyleSheet("""
-            QLineEdit {
-                border: 1px solid #cccccc;
-                border-radius: 5px;
-                padding: 8px;
-                font-size: 14px;
-                background-color: white;
-                color: #333333;
-            }
-        """)
-        
-        self.connect_button = QPushButton("Connect")
-        self.connect_button.setStyleSheet("""
-            QPushButton {
-                background-color: #007AFF;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                padding: 8px 15px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #0069d9;
-            }
-        """)
-        self.connect_button.clicked.connect(self.connect_to_avend)
-        
-        ip_form_layout.addWidget(ip_label)
-        ip_form_layout.addWidget(self.ip_input, 1)  # Give the input field more space
-        ip_form_layout.addWidget(self.connect_button)
-        
-        # Connection status
-        self.connection_status = QLabel("Not connected")
-        self.connection_status.setAlignment(Qt.AlignCenter)
-        self.connection_status.setStyleSheet("color: #FF9500; font-size: 14px; margin-top: 5px;")
-        self.connection_status.setMinimumHeight(30)
-        
-        # Close settings button
-        close_settings_button = QPushButton("Close Settings")
-        close_settings_button.setStyleSheet("""
-            QPushButton {
-                background-color: #FF9500;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                padding: 10px;
-                font-size: 14px;
-                font-weight: bold;
-                margin-top: 20px;
-            }
-            QPushButton:hover {
-                background-color: #FF8000;
-            }
-        """)
-        close_settings_button.clicked.connect(self.toggle_settings)
-        
-        # Add all to settings layout
-        settings_layout.addWidget(settings_title)
-        settings_layout.addSpacing(15)
-        settings_layout.addWidget(ip_title)
-        settings_layout.addWidget(ip_form_widget)
-        settings_layout.addWidget(self.connection_status)
-        settings_layout.addStretch()
-        settings_layout.addWidget(close_settings_button)
-        
-        # Create a container for buttons
-        self.button_container = QWidget()
-        button_grid = QGridLayout(self.button_container)
-        button_grid.setSpacing(20)  # Increased spacing between buttons
-        
-        # Button labels and their positions
+        # Configure buttons
         buttons_config = [
             ("Hard Hat", "hardhat", 0, 0),
-            ("Safety Glasses", "glasses", 0, 1),
-            ("Beard Net", "beardnet", 1, 0),
+            ("Beard Net", "beardnet", 0, 1),
+            ("Gloves", "gloves", 0, 2),
+            ("Safety Glasses", "glasses", 1, 0),
             ("Ear Plugs", "earplugs", 1, 1),
-            ("Gloves", "gloves", 2, 0),
-            ("OVERRIDE", "override", 2, 1)
+            ("OVERRIDE", "override", 1, 2)
         ]
         
-        # Create and style buttons
         self.ppe_buttons = {}
         for label, key, row, col in buttons_config:
             button = QPushButton(label)
-            button.setMinimumHeight(60)  # Reduced button height
+            button.setFixedSize(180, 80)
+            
             if key == "override":
-                button.setStyleSheet("""
-                    QPushButton {
-                        background-color: #FF9500;
+                button.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {self.secondary_color};
                         color: white;
-                        border: none;
-                        border-radius: 8px;
-                        font-size: 14px;
+                        border-radius: 10px;
+                        font-size: 16px;
                         font-weight: bold;
-                    }
+                    }}
+                    QPushButton:hover {{
+                        background-color: #E59400;
+                    }}
                 """)
                 button.clicked.connect(self.override_dispense)
             else:
-                button.setStyleSheet("""
-                    QPushButton {
-                        background-color: #ff6b6b;
+                button.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {self.primary_color};
                         color: white;
-                        border: none;
-                        border-radius: 8px;
-                        font-size: 14px;
+                        border-radius: 10px;
+                        font-size: 16px;
                         font-weight: bold;
-                    }
+                    }}
+                    QPushButton:hover {{
+                        background-color: #FF6B6B;
+                    }}
                 """)
-                # Connect each PPE button to its dispense function
                 button.clicked.connect(lambda checked, k=key: self.dispense_item(k))
+            
             button_grid.addWidget(button, row, col)
             self.ppe_buttons[key] = button
-            
-            # Add AVend code label to each button (A1-A5)
-            if key in self.avend_codes:
-                avend_code = self.avend_codes[key]
-                current_text = button.text()
-                button.setText(f"{current_text}\n({avend_code})")
         
-        # Add all widgets to main layout with proper spacing
+        # Add all widgets to main layout
         main_layout.addLayout(header_layout)
-        main_layout.addSpacing(10)
-        main_layout.addWidget(status_card)
-        main_layout.addWidget(self.settings_panel)
-        main_layout.addSpacing(20)
-        main_layout.addWidget(self.button_container)
+        main_layout.addLayout(status_layout)
+        main_layout.addWidget(self.camera_feed)
+        main_layout.addLayout(button_grid)
         main_layout.addStretch()
 
+        # Flag to track if first manual dispense has been done
+        self.first_dispense_done = False
+        
         # Start detection thread
         self.detection_thread = DetectionThread()
         self.detection_thread.detection_signal.connect(self.update_button_states)
         self.detection_thread.camera_status_signal.connect(self.update_camera_status)
+        self.detection_thread.frame_signal.connect(self.update_camera_feed)
         self.detection_thread.start()
 
     def update_button_states(self, detection_states):
@@ -350,97 +274,247 @@ class MainWindow(QMainWindow):
                 print(f"Found button for {key}: {button.text()}")
                 if detected:
                     print(f"Setting {key} button to GREEN (detected)")
-                    button.setStyleSheet("""
-                        QPushButton {
-                            background-color: #4CAF50;
+                    button.setStyleSheet(f"""
+                        QPushButton {{
+                            background-color: {self.success_color};
                             color: white;
-                            border: none;
-                            border-radius: 8px;
+                            border-radius: 10px;
                             font-size: 14px;
                             font-weight: bold;
-                        }
+                        }}
                     """)
                 else:
                     if key == "override":
                         print(f"Setting override button to ORANGE")
-                        button.setStyleSheet("""
-                            QPushButton {
-                                background-color: #FF9500;
+                        button.setStyleSheet(f"""
+                            QPushButton {{
+                                background-color: {self.secondary_color};
                                 color: white;
-                                border: none;
-                                border-radius: 8px;
+                                border-radius: 10px;
                                 font-size: 14px;
                                 font-weight: bold;
-                            }
+                            }}
+                            QPushButton:hover {{
+                                background-color: #E59400;
+                            }}
                         """)
                     else:
                         print(f"Setting {key} button to RED (not detected)")
-                        button.setStyleSheet("""
-                            QPushButton {
-                                background-color: #ff6b6b;
+                        button.setStyleSheet(f"""
+                            QPushButton {{
+                                background-color: {self.danger_color};
                                 color: white;
-                                border: none;
-                                border-radius: 8px;
+                                border-radius: 10px;
                                 font-size: 14px;
                                 font-weight: bold;
-                            }
+                            }}
+                            QPushButton:hover {{
+                                background-color: #CC2A25;
+                            }}
                         """)
             else:
                 print(f"Warning: No button found for key {key}")
 
     def update_camera_status(self, is_connected):
         """Update title color based on camera status"""
-        if is_connected:
-            self.title.setStyleSheet("color: #4CAF50;")  # Green for connected
+        print("\nCamera Status Update:")
+        print("-----------------------")
+        if is_connected is None:
+            print("Camera status: Initializing")
+            self.title.setStyleSheet(f"color: {self.secondary_color};")
+            self.camera_feed.setText("Initializing camera...")
+        elif is_connected:
+            print("Camera status: Connected and validated")
+            self.title.setStyleSheet(f"color: {self.success_color};")
+            self.camera_feed.setText("Camera connected, waiting for first frame...")
         else:
-            self.title.setStyleSheet("color: #FF9500;")  # Orange for disconnected
-            # We don't use red since the application can still function without a camera
+            print("Camera status: Disconnected or failed validation")
+            self.title.setStyleSheet(f"color: {self.secondary_color};")
+            self.camera_feed.setText("Camera not available")
+        print("-----------------------")
 
     def toggle_settings(self):
         """Toggle the visibility of the settings panel"""
-        # Hide the settings panel if it's visible, show it if it's hidden
+        if not hasattr(self, 'settings_panel'):
+            # Create settings panel if it doesn't exist
+            self.create_settings_panel()
+        
+        # Toggle visibility
         is_visible = self.settings_panel.isVisible()
         self.settings_panel.setVisible(not is_visible)
         
-        # Create a container for buttons if not already created
-        if not hasattr(self, 'button_container'):
-            # Find the button grid layout's parent widget
-            for i in range(self.centralWidget().layout().count()):
-                item = self.centralWidget().layout().itemAt(i)
-                if isinstance(item, QGridLayout):
-                    self.button_container = item.parent()
-                    break
-            else:
-                # If we didn't find it, use the last widget before the stretch
-                count = self.centralWidget().layout().count()
-                if count > 1:
-                    self.button_container = self.centralWidget().layout().itemAt(count-2).widget()
-        
-        # If showing settings, hide the buttons
+        # Update UI based on visibility
         if not is_visible:
-            self.dispensing_status.setText("Configure AVend API connection...")
-            if hasattr(self, 'button_container'):
-                self.button_container.setVisible(False)
+            # Hide all main elements
+            self.dispensing_status.setVisible(False)
+            self.gate_status.setVisible(False)
+            self.button_container.setVisible(False)
+            self.camera_feed.setVisible(False)
+            self.title.setVisible(False)
+            self.settings_button.setVisible(False)
+            self.help_button.setVisible(False)
+            
+            # Show settings panel
+            self.settings_panel.setVisible(True)
         else:
+            # Show all main elements
+            self.dispensing_status.setVisible(True)
+            self.gate_status.setVisible(True)
+            self.button_container.setVisible(True)
+            self.camera_feed.setVisible(True)
+            self.title.setVisible(True)
+            self.settings_button.setVisible(True)
+            self.help_button.setVisible(True)
+            
+            # Hide settings panel
+            self.settings_panel.setVisible(False)
             self.reset_status()
-            if hasattr(self, 'button_container'):
-                self.button_container.setVisible(True)
+
+    def create_settings_panel(self):
+        """Create the settings panel with IP configuration"""
+        self.settings_panel = QWidget()
+        self.settings_panel.setVisible(False)
+        self.settings_panel.setStyleSheet("""
+            QWidget {
+                background-color: white;
+            }
+            QLabel {
+                color: #333333;
+                font-size: 14px;
+            }
+            QLineEdit {
+                border: 1px solid #D1D1D6;
+                border-radius: 4px;
+                padding: 8px;
+                font-size: 14px;
+                min-height: 20px;
+                background-color: white;
+                color: #000000;
+            }
+        """)
+
+        settings_layout = QVBoxLayout(self.settings_panel)
+        settings_layout.setSpacing(15)
+        settings_layout.setContentsMargins(20, 20, 20, 20)
+
+        # Title with green text
+        title = QLabel("PPE Vending Machine")
+        title.setFont(QFont('Arial', 24))
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet("color: #2ECC71; margin-bottom: 10px;")
+
+        # Settings subtitle
+        settings_title = QLabel("API Configuration")
+        settings_title.setFont(QFont('Arial', 16))
+        settings_title.setAlignment(Qt.AlignCenter)
+        settings_title.setStyleSheet("color: #FF7B7B; margin: 10px 0;")
+
+        # Form container with white background
+        form_container = QWidget()
+        form_container.setStyleSheet("""
+            QWidget {
+                background-color: white;
+                border-radius: 8px;
+            }
+        """)
+        form_layout = QVBoxLayout(form_container)
+        form_layout.setSpacing(10)
+        form_layout.setContentsMargins(15, 15, 15, 15)
+
+        # IP and Port inputs in horizontal layout
+        input_layout = QHBoxLayout()
         
+        # IP input
+        ip_container = QVBoxLayout()
+        ip_label = QLabel("IP:")
+        self.ip_input = QLineEdit("127.0.0.1")
+        self.ip_input.setFixedWidth(200)
+        ip_container.addWidget(ip_label)
+        ip_container.addWidget(self.ip_input)
+        
+        # Port input
+        port_container = QVBoxLayout()
+        port_label = QLabel("Port:")
+        self.port_input = QLineEdit("8080")
+        self.port_input.setFixedWidth(80)
+        port_container.addWidget(port_label)
+        port_container.addWidget(self.port_input)
+        
+        input_layout.addLayout(ip_container)
+        input_layout.addLayout(port_container)
+        input_layout.addStretch()
+        
+        # Add inputs to form
+        form_layout.addLayout(input_layout)
+
+        # Connection status
+        self.connection_status = QLabel("Not connected")
+        self.connection_status.setAlignment(Qt.AlignCenter)
+        self.connection_status.setStyleSheet("""
+            font-size: 14px;
+            color: #8E8E93;
+            margin: 10px 0;
+        """)
+        form_layout.addWidget(self.connection_status)
+
+        # Close button
+        close_button = QPushButton("Close")
+        close_button.setFixedHeight(40)
+        close_button.setStyleSheet("""
+            QPushButton {
+                background-color: #FFA500;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                font-size: 16px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #FF9400;
+            }
+        """)
+        close_button.clicked.connect(self.toggle_settings)
+
+        # Add all components to main layout
+        settings_layout.addWidget(title)
+        settings_layout.addWidget(settings_title)
+        settings_layout.addWidget(form_container)
+        settings_layout.addStretch()
+        settings_layout.addWidget(close_button)
+
+        # Add settings panel to main layout, replacing the camera feed
+        self.centralWidget().layout().insertWidget(2, self.settings_panel)
+
     def connect_to_avend(self):
-        """Connect to the AVend API with the specified IP"""
+        """Connect to the AVend API with the specified IP and port"""
         ip = self.ip_input.text().strip()
-        if not ip:
-            self.connection_status.setText("Error: Please enter a valid IP address")
-            self.connection_status.setStyleSheet("color: #FF3B30;")
+        port = self.port_input.text().strip()
+        
+        if not ip or not port:
+            self.connection_status.setText("Error: Please enter valid IP and port")
+            self.connection_status.setStyleSheet(f"color: {self.danger_color};")
             return
             
         try:
-            self.api = AvendAPI(host=ip, port=8080)
-            self.connection_status.setText(f"Connected to {ip}:8080")
-            self.connection_status.setStyleSheet("color: #4CAF50;")
+            print(f"\nAttempting to connect to AVend API at {ip}:{port}")
+            self.api = AvendAPI(host=ip, port=int(port))
+            
+            # Test connection with a session start
+            response = self.api.start_session()
+            if response.get("success", False):
+                self.connection_status.setText(f"Connected to {ip}:{port}")
+                self.connection_status.setStyleSheet(f"color: {self.success_color};")
+                print("Successfully connected to AVend API")
+            else:
+                error_msg = response.get("error", "Unknown error")
+                self.connection_status.setText(f"Connection test failed: {error_msg}")
+                self.connection_status.setStyleSheet(f"color: {self.danger_color};")
+                print(f"Connection test failed: {error_msg}")
+                
         except Exception as e:
             self.connection_status.setText(f"Error: {str(e)}")
-            self.connection_status.setStyleSheet("color: #FF3B30;")
+            self.connection_status.setStyleSheet(f"color: {self.danger_color};")
+            print(f"Error connecting to AVend API: {str(e)}")
             
     def dispense_item(self, item_key):
         """Dispense an item based on its key"""
@@ -460,7 +534,7 @@ class MainWindow(QMainWindow):
         """Dispense an item with the given AVend code"""
         # Update status to show dispensing
         self.dispensing_status.setText(f"Dispensing {code}...")
-        self.dispensing_status.setStyleSheet("color: #FF9500;")
+        self.dispensing_status.setStyleSheet(f"color: {self.secondary_color};")
         
         # First start a session
         session_response = self.api.start_session()
@@ -468,7 +542,7 @@ class MainWindow(QMainWindow):
         if not session_response.get("success", False):
             error_msg = session_response.get("error", "Unknown error")
             self.dispensing_status.setText(f"Error: Failed to start session")
-            self.dispensing_status.setStyleSheet("color: #FF3B30;")
+            self.dispensing_status.setStyleSheet(f"color: {self.danger_color};")
             return
         
         # Then dispense the item
@@ -476,7 +550,7 @@ class MainWindow(QMainWindow):
         
         if dispense_response.get("success", False):
             self.dispensing_status.setText(f"Successfully dispensed {code}")
-            self.dispensing_status.setStyleSheet("color: #4CAF50;")
+            self.dispensing_status.setStyleSheet(f"color: {self.success_color};")
             
             # Check if this is the first manual dispense
             if not self.first_dispense_done:
@@ -489,14 +563,14 @@ class MainWindow(QMainWindow):
         else:
             error_msg = dispense_response.get("error", "Unknown error")
             self.dispensing_status.setText(f"Error: Failed to dispense {code}")
-            self.dispensing_status.setStyleSheet("color: #FF3B30;")
+            self.dispensing_status.setStyleSheet(f"color: {self.danger_color};")
             
     def call_h1_service(self):
         """Start the H1 Service routine that runs every 20 seconds"""
         try:
             # Add a message that we're about to start the service routine
             self.dispensing_status.setText("Starting H1 Service routine...")
-            self.dispensing_status.setStyleSheet("color: #FF9500;")
+            self.dispensing_status.setStyleSheet(f"color: {self.secondary_color};")
             
             # Add a delay before starting the service routine (3 seconds)
             QTimer.singleShot(3000, self._start_h1_service_routine)
@@ -514,7 +588,7 @@ class MainWindow(QMainWindow):
             if service_response.get("success", False):
                 print("Successfully started H1 Service routine")
                 self.dispensing_status.setText("H1 Service routine started (running every 20s)")
-                self.dispensing_status.setStyleSheet("color: #4CAF50;")
+                self.dispensing_status.setStyleSheet(f"color: {self.success_color};")
             else:
                 print(f"Error starting H1 Service routine: {service_response.get('error', 'Unknown error')}")
         except Exception as e:
@@ -523,7 +597,7 @@ class MainWindow(QMainWindow):
     def reset_status(self):
         """Reset the dispensing status to the default message"""
         self.dispensing_status.setText("Ready to dispense...")
-        self.dispensing_status.setStyleSheet("color: black;")
+        self.dispensing_status.setStyleSheet("color: #8E8E93;")
         
     def close_application(self):
         """Handle application shutdown"""
@@ -553,6 +627,97 @@ class MainWindow(QMainWindow):
             print(f"Error stopping H1 Service routine: {str(e)}")
             
         super().closeEvent(event)
+
+    def update_camera_feed(self, q_image):
+        """Update the camera feed display with the latest frame"""
+        try:
+            # Cache the label size to avoid repeated calculations
+            if not hasattr(self, '_label_size'):
+                self._label_size = (self.camera_feed.width(), self.camera_feed.height())
+                print(f"\nInitialized camera feed display size: {self._label_size}")
+                print("Waiting for first frame...")
+            
+            if q_image is None:
+                if not hasattr(self, '_null_frame_count'):
+                    self._null_frame_count = 0
+                self._null_frame_count += 1
+                
+                if self._null_frame_count % 10 == 0:  # Only print every 10th null frame
+                    print(f"\nReceived null frame (count: {self._null_frame_count})")
+                return
+                
+            # Reset null frame counter when we get a valid frame
+            if hasattr(self, '_null_frame_count'):
+                self._null_frame_count = 0
+            
+            # Track frame statistics
+            if not hasattr(self, '_frame_count'):
+                self._frame_count = 0
+                self._last_fps_time = time.time()
+                self._last_frame_time = time.time()
+            
+            self._frame_count += 1
+            current_time = time.time()
+            
+            # Calculate and print FPS every second
+            if current_time - self._last_fps_time >= 1.0:
+                fps = self._frame_count / (current_time - self._last_fps_time)
+                frame_interval = (current_time - self._last_fps_time) / self._frame_count
+                print(f"\nGUI Frame Stats:")
+                print(f"FPS: {fps:.2f}")
+                print(f"Frame interval: {frame_interval*1000:.1f}ms")
+                print(f"Frame size: {q_image.width()}x{q_image.height()}")
+                self._frame_count = 0
+                self._last_fps_time = current_time
+            
+            self._last_frame_time = current_time
+            
+            # Calculate scaling while preserving aspect ratio
+            src_aspect = q_image.width() / q_image.height()
+            dst_aspect = self._label_size[0] / self._label_size[1]
+            
+            if src_aspect > dst_aspect:
+                # Image is wider than display area
+                new_width = self._label_size[0]
+                new_height = int(new_width / src_aspect)
+            else:
+                # Image is taller than display area
+                new_height = self._label_size[1]
+                new_width = int(new_height * src_aspect)
+            
+            # Only scale if needed and use high-quality scaling
+            if q_image.width() != new_width or q_image.height() != new_height:
+                scaled_pixmap = QPixmap.fromImage(q_image).scaled(
+                    new_width,
+                    new_height,
+                    Qt.KeepAspectRatio,
+                    Qt.SmoothTransformation
+                )
+            else:
+                scaled_pixmap = QPixmap.fromImage(q_image)
+            
+            # Center the image in the label
+            x_offset = max(0, (self._label_size[0] - new_width) // 2)
+            y_offset = max(0, (self._label_size[1] - new_height) // 2)
+            
+            # Clear the label and set style for black background
+            self.camera_feed.setStyleSheet("QLabel { background-color: black; }")
+            
+            # Set the pixmap with proper alignment
+            self.camera_feed.setPixmap(scaled_pixmap)
+            self.camera_feed.setAlignment(Qt.AlignCenter)
+            
+            # Clear placeholder text only on first frame
+            if self.camera_feed.text():
+                print("\nReceived first valid frame, clearing placeholder text")
+                self.camera_feed.setText("")
+                
+        except Exception as e:
+            print(f"\nError updating camera feed:")
+            print(f"Error type: {type(e).__name__}")
+            print(f"Error message: {str(e)}")
+            import traceback
+            traceback.print_exc()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

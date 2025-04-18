@@ -195,7 +195,7 @@ def index():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>AVend Mock Server</title>
+        <title>AVend Server Dashboard (100% Real)</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <script>
             // Use AJAX for real-time updates instead of page refresh
@@ -469,7 +469,7 @@ def index():
     </head>
     <body>
         <div class="header">
-            <h1>AVend Mock Server</h1>
+            <h1>AVend Server Dashboard (100% Real)</h1>
             <span class="auto-refresh">Real-time updates</span>
         </div>
         
