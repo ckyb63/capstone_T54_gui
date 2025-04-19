@@ -9,9 +9,24 @@ import sys
 import platform
 import subprocess
 import re
+import torch
 
 # Load the trained model
-model = YOLO(r'C:\Users\maxch\Documents\Purdue Files\2024 Fall\ENGT 480\GitHub\capstone_T54_gui\new_backup_gui_win\14_Apr.pt')
+# Make sure the model path is correct for your environment
+# Consider making this path configurable or relative
+MODEL_PATH = r'C:\Users\maxch\Documents\Purdue Files\2024 Fall\ENGT 480\GitHub\capstone_T54_gui\new_backup_gui_win\14_Apr.pt'
+try:
+    model = YOLO(MODEL_PATH)
+    print(f"Successfully loaded YOLO model from: {MODEL_PATH}")
+except Exception as e:
+    print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    print(f"ERROR loading YOLO model from {MODEL_PATH}: {e}")
+    print(f"Ensure the path is correct and the model file exists.")
+    print(f"Falling back to mock functionality if GUI requests.")
+    print(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    # Set model to None or a mock object if loading fails, 
+    # so the DetectionThread can handle it gracefully.
+    model = None 
 
 # Mapping of model class names to GUI button keys
 CLASS_TO_BUTTON_MAP = {
@@ -24,15 +39,15 @@ CLASS_TO_BUTTON_MAP = {
     'gloves': 'gloves'
 }
 
-# Global variable to store detection results
-latest_detection_results = None
-last_annotated_frame = None  # Add this line to store the last annotated frame
+# Global variable to store detection results - Will be moved into DetectionThread
+# latest_detection_results = None 
+# last_annotated_frame = None
 
 # Constants for optimization
-FRAME_WIDTH = 640  # Reduced resolution
+FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
-DETECTION_INTERVAL = 5  # Only run detection every N frames
-DISPLAY_FPS = 30  # Target FPS for display updates
+DETECTION_INTERVAL = 5  # Only run detection every N frames (Increased from 5)
+DISPLAY_FPS = 60 # Target FPS for camera reads/display attempts
 
 def print_camera_info(cap, camera_index):
     """Print detailed information about the camera"""
@@ -93,14 +108,23 @@ def try_open_camera(cam_index, max_retries=5, retry_delay=2.0):
     print(f"\nAttempting to open camera {cam_index} (max {max_retries} attempts)...")
     print(f"Operating System: {platform.system()}")
     
+    device_path = None # Store device path if found
     if platform.system() != "Windows":
         # Get list of available cameras on Linux
         cameras = get_linux_cameras()
         print("\nDetected cameras:")
-        for cam in cameras:
-            print(f"Name: {cam['name']}")
-            print(f"Path: {cam['path']}")
-    
+        for i, cam in enumerate(cameras):
+            print(f"  {i}: Name: {cam['name']}, Path: {cam['path']}")
+            # Try to match cam_index to the index in the path (e.g., /dev/video1 -> index 1)
+            match = re.search(r'(\d+)$', cam['path'])
+            if match and int(match.group(1)) == cam_index:
+                 device_path = cam['path']
+                 print(f"Found matching device path for index {cam_index}: {device_path}")
+                 break
+        if not device_path:
+             print(f"Could not find specific device path for index {cam_index}, will try index directly.")
+
+
     # Different capture methods based on OS
     if platform.system() == "Windows":
         capture_method = cv2.CAP_DSHOW
@@ -114,136 +138,110 @@ def try_open_camera(cam_index, max_retries=5, retry_delay=2.0):
             if platform.system() == "Windows":
                 cap = cv2.VideoCapture(cam_index, capture_method)
             else:
-                # For Linux, try both the index and the direct device path
-                device_path = f"/dev/video{cam_index}"
-                print(f"Trying direct device path: {device_path}")
-                cap = cv2.VideoCapture(device_path, capture_method)
+                # For Linux, try the specific device path first if found
+                if device_path:
+                    print(f"Trying specific device path: {device_path}")
+                    cap = cv2.VideoCapture(device_path, capture_method)
                 
-                if not cap.isOpened():
-                    print(f"Direct path failed, trying index {cam_index}")
+                # If path failed or wasn't found, try the index with V4L2
+                if not device_path or not cap.isOpened():
+                    print(f"Trying index {cam_index} with V4L2 backend...")
                     cap = cv2.VideoCapture(cam_index, capture_method)
                 
+                # If V4L2 failed, try the index with the default backend
                 if not cap.isOpened():
-                    print("V4L2 failed, trying default capture method...")
+                    print("V4L2 failed, trying index {cam_index} with default backend...")
                     cap = cv2.VideoCapture(cam_index)
             
             # Give the camera more time to initialize
             print("Waiting for camera initialization...")
-            time.sleep(retry_delay * 2)  # Double the delay
+            time.sleep(retry_delay) # Reduced wait
             
             if cap.isOpened():
                 print("Camera initially opened, attempting to configure...")
                 
-                # Set camera properties based on OS
-                if platform.system() != "Windows":
+                # Try to set desired properties (resolution, FPS, buffer)
+                print("\nRequesting camera properties:")
+                props_to_set = {
+                    'WIDTH': (cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH),
+                    'HEIGHT': (cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT),
+                    'FPS': (cv2.CAP_PROP_FPS, DISPLAY_FPS), # Request desired FPS
+                    'BUFFERSIZE': (cv2.CAP_PROP_BUFFERSIZE, 1) # Keep buffer low for latency
+                }
+                
+                for name, (prop, value) in props_to_set.items():
                     try:
-                        # First try to get current format
-                        current_fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
-                        print(f"Current format: {current_fourcc}")
-                        
-                        # Try different formats if needed
-                        formats_to_try = [
-                            ('M', 'J', 'P', 'G'),  # MJPG
-                            ('Y', 'U', 'Y', 'V'),  # YUYV
-                            None  # Try with default format
-                        ]
-                        
-                        success = False
-                        for fmt in formats_to_try:
-                            try:
-                                if fmt is None:
-                                    print("Trying with default format")
-                                    success = True
-                                    break
-                                    
-                                fourcc = cv2.VideoWriter_fourcc(*fmt)
-                                print(f"Trying format: {''.join(fmt)}")
-                                if cap.set(cv2.CAP_PROP_FOURCC, fourcc):
-                                    print(f"Successfully set format to {''.join(fmt)}")
-                                    success = True
-                                    break
-                            except Exception as e:
-                                print(f"Failed to set format {''.join(fmt) if fmt else 'default'}: {str(e)}")
-                        
-                        # Try to set other properties
-                        print("\nSetting camera properties:")
-                        props = {
-                            'FPS': (cv2.CAP_PROP_FPS, 30),
-                            'WIDTH': (cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH),
-                            'HEIGHT': (cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT),
-                            'BUFFERSIZE': (cv2.CAP_PROP_BUFFERSIZE, 1)
-                        }
-                        
-                        for name, (prop, value) in props.items():
-                            try:
-                                original = cap.get(prop)
-                                if cap.set(prop, value):
-                                    actual = cap.get(prop)
-                                    print(f"{name}: Original={original}, Requested={value}, Actual={actual}")
-                                else:
-                                    print(f"Failed to set {name}")
-                            except Exception as e:
-                                print(f"Error setting {name}: {str(e)}")
-                        
+                        original = cap.get(prop)
+                        if cap.set(prop, value):
+                            # Verify if it was actually set
+                            actual = cap.get(prop)
+                            print(f"  {name}: Requested={value}, Original={original}, Actual={actual}")
+                        else:
+                            print(f"  {name}: Failed to set (requested: {value})")
                     except Exception as e:
-                        print(f"Error during camera configuration: {str(e)}")
-                        print("Continuing with default settings")
+                        print(f"  Error setting {name}: {str(e)}")
                 
                 # Validate camera with multiple test reads
-                print(f"\nValidating camera with test reads...")
+                print("\nValidating camera with test reads...")
                 valid_reads = 0
                 frames = []
                 
-                for i in range(10):  # Increased test reads
+                for i in range(5): # Reduced test reads but quicker
                     try:
                         ret, test_frame = cap.read()
                         if ret and test_frame is not None and test_frame.size > 0:
                             valid_reads += 1
                             frames.append(test_frame.shape)
-                            print(f"Test read {i+1}: Success (shape: {test_frame.shape})")
+                            # print(f"Test read {i+1}: Success (shape: {test_frame.shape})") # Less verbose
                         else:
-                            print(f"Test read {i+1}: Failed (ret={ret}, frame={'None' if test_frame is None else test_frame.size})")
-                        time.sleep(0.2)  # Longer delay between reads
+                            print(f"Test read {i+1}: Failed (ret={ret}, frame_size={'None' if test_frame is None else test_frame.size})")
+                        # time.sleep(0.2) # Removed sleep between reads for faster validation
                     except Exception as e:
                         print(f"Error during test read {i+1}: {str(e)}")
                 
-                print(f"\nValidation summary:")
-                print(f"Valid reads: {valid_reads}/10")
+                print("\nValidation summary:")
+                print(f"Valid reads: {valid_reads}/5")
                 if frames:
-                    print(f"Frame sizes: {frames}")
+                    # Show unique frame shapes observed
+                    unique_shapes = set(frames)
+                    print(f"Observed frame shapes: {unique_shapes}")
                 
-                # More lenient validation - accept if we get any valid frames
-                if valid_reads > 0:
-                    print(f"Camera validated with {valid_reads}/10 successful test reads")
+                # Accept if we get at least a few valid frames
+                if valid_reads >= 2: # Adjusted threshold
+                    print(f"Camera validated with {valid_reads}/5 successful test reads.")
                     
-                    # Print final camera properties
-                    props = {
+                    # Print final confirmed camera properties
+                    print("\nFinal Confirmed Camera Properties:")
+                    props_to_read = {
                         'FOURCC': cv2.CAP_PROP_FOURCC,
                         'FPS': cv2.CAP_PROP_FPS,
                         'WIDTH': cv2.CAP_PROP_FRAME_WIDTH,
                         'HEIGHT': cv2.CAP_PROP_FRAME_HEIGHT,
-                        'BRIGHTNESS': cv2.CAP_PROP_BRIGHTNESS,
-                        'CONTRAST': cv2.CAP_PROP_CONTRAST,
-                        'SATURATION': cv2.CAP_PROP_SATURATION,
-                        'HUE': cv2.CAP_PROP_HUE,
-                        'GAIN': cv2.CAP_PROP_GAIN,
-                        'EXPOSURE': cv2.CAP_PROP_EXPOSURE,
-                        'BUFFERSIZE': cv2.CAP_PROP_BUFFERSIZE
+                        'BUFFERSIZE': cv2.CAP_PROP_BUFFERSIZE,
+                         # Add more relevant properties if needed for debugging
+                         # 'BRIGHTNESS': cv2.CAP_PROP_BRIGHTNESS,
+                         # 'CONTRAST': cv2.CAP_PROP_CONTRAST,
+                         # 'SATURATION': cv2.CAP_PROP_SATURATION,
+                         # 'EXPOSURE': cv2.CAP_PROP_EXPOSURE,
                     }
-                    print("\nFinal Camera Properties:")
-                    for prop_name, prop_id in props.items():
+                    for prop_name, prop_id in props_to_read.items():
                         try:
                             value = cap.get(prop_id)
-                            print(f"{prop_name}: {value}")
+                             # Decode FOURCC if possible
+                            if prop_name == 'FOURCC' and value != -1:
+                                 fourcc_str = "".join([chr((int(value) >> 8 * i) & 0xFF) for i in range(4)])
+                                 print(f"  {prop_name}: {fourcc_str} ({value})")
+                            else:
+                                 print(f"  {prop_name}: {value}")
                         except:
-                            print(f"{prop_name}: Failed to read")
+                            print(f"  {prop_name}: Failed to read")
                     
                     return cap
                 else:
-                    print(f"Camera validation failed (no valid frames)")
+                    print(f"Camera validation failed ({valid_reads}/5 valid frames)")
                     cap.release()
             else:
-                print(f"Failed to open camera {cam_index}")
+                print(f"Failed to open camera using current method.")
                 if cap:
                     cap.release()
                     
@@ -256,258 +254,48 @@ def try_open_camera(cam_index, max_retries=5, retry_delay=2.0):
             print(f"Waiting {retry_delay} seconds before next attempt...")
             time.sleep(retry_delay)
     
+    print(f"All attempts to open camera {cam_index} failed.")
     return None
 
-def run_detection(callback):
-    """
-    Run continuous detection on webcam feed and report PPE detection status.
-    
-    Args:
-        callback: A function that will be called with detection results.
-                 The callback receives a dictionary with detection states.
-    """
-    # Initialize detection thread
-    detection_thread = threading.Thread(target=_detection_worker, args=(callback,))
-    detection_thread.daemon = True  # Thread will exit when main program exits
-    detection_thread.start()
-    
-    return detection_thread
+# !!! Removed the _detection_worker function from here !!!
+# It will become a method within the DetectionThread class in main_landscape.py
 
-def _detection_worker(callback):
+# --- Main Entry Point --- 
+# This function now just returns the necessary constants/model
+def run_detection():
     """
-    Worker function that runs in a separate thread to perform continuous detection.
-    
-    Args:
-        callback: Function to call with detection results and frame
+    Called by DetectionThread to get necessary components.
+    Returns the YOLO model object and configuration constants.
     """
-    global last_annotated_frame  # Add this line
-    mock_detection_states = {
-        'hardhat': True,
-        'glasses': True,
-        'beardnet': True,
-        'earplugs': True,
-        'gloves': True
+    config = {
+        'model': model, # The loaded YOLO model (or None if failed)
+        'frame_width': FRAME_WIDTH,
+        'frame_height': FRAME_HEIGHT,
+        'detection_interval': DETECTION_INTERVAL,
+        'display_fps': DISPLAY_FPS,
+        'class_map': CLASS_TO_BUTTON_MAP
     }
-    
-    try:
-        USE_MOCK_DATA = False
-        
-        if USE_MOCK_DATA:
-            print("Using mock detection data instead of camera.")
-            callback(None, None)
-            while True:
-                callback(mock_detection_states, None)
-                time.sleep(1.0 / DISPLAY_FPS)
-            return
-        
-        print("\nInitializing camera detection system...")
-        print("----------------------------------------")
-        callback(None, None)
-        
-        if platform.system() != "Windows":
-            # Try video1 first since that's where the USB camera is
-            print("\nTrying primary USB camera at /dev/video1...")
-            cap = try_open_camera(1, max_retries=3, retry_delay=2.0)
-            
-            # If that fails, try video2
-            if cap is None:
-                print("\nTrying secondary USB camera at /dev/video2...")
-                cap = try_open_camera(2, max_retries=2, retry_delay=2.0)
-            
-            # Last resort, try video0
-            if cap is None:
-                print("\nTrying fallback camera at /dev/video0...")
-                cap = try_open_camera(0, max_retries=2, retry_delay=2.0)
-        else:
-            # Windows camera initialization remains the same
-            print("\nTrying to open external camera...")
-            cap = try_open_camera(1, max_retries=5, retry_delay=2.0)
-            
-            if cap is None:
-                print("\nExternal camera failed, trying built-in camera...")
-                cap = try_open_camera(0, max_retries=3, retry_delay=1.0)
-        
-        if cap is None:
-            print("\nFailed to initialize any camera. Using mock data.")
-            callback(None, None)
-            while True:
-                callback(mock_detection_states, None)
-                time.sleep(1.0 / DISPLAY_FPS)
-            return
-            
-        # Camera opened successfully, now set properties
-        print("\nSetting camera properties:")
-        
-        # Store original properties for comparison
-        orig_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        orig_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        orig_fps = int(cap.get(cv2.CAP_PROP_FPS))
-        
-        print(f"Original camera properties: {orig_width}x{orig_height} @ {orig_fps}fps")
-        
-        print(f"Setting resolution to {FRAME_WIDTH}x{FRAME_HEIGHT}")
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, FRAME_WIDTH)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)
-        
-        print(f"Setting FPS to {DISPLAY_FPS}")
-        cap.set(cv2.CAP_PROP_FPS, DISPLAY_FPS)
-        
-        print("Setting buffer size to 1")
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        
-        # Verify if properties were actually set
-        actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        actual_fps = int(cap.get(cv2.CAP_PROP_FPS))
-        
-        print(f"\nActual camera properties after setting:")
-        print(f"Resolution: {actual_width}x{actual_height} (requested: {FRAME_WIDTH}x{FRAME_HEIGHT})")
-        print(f"FPS: {actual_fps} (requested: {DISPLAY_FPS})")
-        
-        # Test frame capture with retries
-        print("\nValidating camera with test captures:")
-        test_frame = None
-        valid_frames = 0
-        
-        for i in range(5):
-            ret, frame = cap.read()
-            if ret and frame is not None and frame.size > 0:
-                test_frame = frame
-                valid_frames += 1
-                print(f"Test capture {i+1}: Success (shape: {frame.shape})")
-            else:
-                print(f"Test capture {i+1}: Failed")
-            time.sleep(0.1)
-        
-        if valid_frames < 3:
-            print(f"Camera validation failed ({valid_frames}/5 successful captures)")
-            cap.release()
-            callback(None, None)
-            while True:
-                callback(mock_detection_states, None)
-                time.sleep(1.0 / DISPLAY_FPS)
-            return
+    print("run_detection called, returning model and config.")
+    return config
 
-        print(f"\nCamera validated with {valid_frames}/5 successful captures")
-        print("Starting detection loop...")
-        callback(True, None)
-        
-        frame_count = 0
-        last_detection_states = None
-        last_detection_time = time.time()
-        fps_start_time = time.time()
-        fps_frame_count = 0
-        
-        while True:
-            frame_start_time = time.time()
-            
-            ret, frame = cap.read()
-            if not ret:
-                print("Error reading frame from camera, retrying...")
-                time.sleep(0.5)  # Add small delay before retry
-                continue  # Try to read the next frame instead of breaking
-            
-            frame_count += 1
-            fps_frame_count += 1
-            
-            # Calculate and print FPS every second
-            if time.time() - fps_start_time >= 1.0:
-                current_fps = fps_frame_count / (time.time() - fps_start_time)
-                print(f"Current FPS: {current_fps:.2f}")
-                fps_frame_count = 0
-                fps_start_time = time.time()
-            
-            display_frame = frame.copy()
-            
-            # Only run detection every DETECTION_INTERVAL frames
-            if frame_count % DETECTION_INTERVAL == 0:
-                detection_start_time = time.time()
-                detection_states = {
-                    'hardhat': False,
-                    'glasses': False,
-                    'beardnet': False,
-                    'earplugs': False,
-                    'gloves': False
-                }
-                
-                # Run detection on the frame
-                results = model.predict(frame, conf=0.5, verbose=False)
-                
-                # Process detection results
-                if results and len(results) > 0:
-                    result = results[0]
-                    
-                    # Process each detected object
-                    for box in result.boxes:
-                        class_index = int(box.cls)
-                        class_name = model.names[class_index].lower()
-                        conf = float(box.conf)
-                        
-                        if class_name in CLASS_TO_BUTTON_MAP:
-                            button_key = CLASS_TO_BUTTON_MAP[class_name]
-                            detection_states[button_key] = True
-                            print(f"Detected {class_name} with confidence {conf:.2f}")
-                    
-                    # Get the annotated frame with bounding boxes using YOLO's plot
-                    display_frame = results[0].plot(
-                        conf=True,      # Show confidence scores
-                        labels=True,    # Show class labels
-                        boxes=True,     # Show bounding boxes
-                        line_width=2,   # Thicker box lines
-                        font_size=18,   # Larger font
-                        pil=False       # Use cv2 instead of PIL for drawing
-                    )
-                    last_annotated_frame = display_frame.copy()  # Store the annotated frame
-                    print(f"Generated annotated frame with boxes: shape={display_frame.shape}")
-                else:
-                    display_frame = frame.copy()
-                    last_annotated_frame = None  # Clear the stored frame if no detections
-                    print("No detections in this frame")
-                
-                detection_time = time.time() - detection_start_time
-                print(f"Detection time: {detection_time:.3f}s")
-                
-                last_detection_states = detection_states
-                last_detection_time = time.time()
-            else:
-                # For frames between detections, use the last annotated frame if available
-                display_frame = last_annotated_frame if last_annotated_frame is not None else frame.copy()
-                detection_states = last_detection_states if last_detection_states else mock_detection_states
-            
-            # Convert BGR to RGB for Qt display
-            display_frame_rgb = cv2.cvtColor(display_frame, cv2.COLOR_BGR2RGB)
-            
-            # Send the current detection states and frame to the GUI
-            callback(detection_states, display_frame_rgb)
-            
-            # Calculate and maintain target frame rate
-            frame_time = time.time() - frame_start_time
-            sleep_time = max(0, (1.0 / DISPLAY_FPS) - frame_time)
-            if sleep_time > 0:
-                time.sleep(sleep_time)
-            
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-        
-        print("\nCleaning up camera resources...")
-        cap.release()
-        cv2.destroyAllWindows()
-        print("Camera cleanup complete.")
-        
-    except Exception as e:
-        print(f"\nCritical error in detection thread:")
-        print(f"Error type: {type(e).__name__}")
-        print(f"Error message: {str(e)}")
-        import traceback
-        print("Traceback:")
-        traceback.print_exc()
-        
-        print("\nFalling back to mock data due to error.")
-        callback(None, None)
-        
-        try:
-            while True:
-                callback(mock_detection_states, None)
-                time.sleep(1.0 / DISPLAY_FPS)
-        except:
-            print("Mock data loop interrupted.")
+# Keep standalone testing block if desired, but update it
+if __name__ == '__main__':
+     print("Capstone Model script run directly.")
+     print("This script primarily provides camera functions and model loading.")
+     print("The main detection loop logic is now intended to be within DetectionThread.")
+     
+     # Example: Test camera opening
+     print("\nTesting camera opening...")
+     test_cap = try_open_camera(1) # Try index 1
+     if test_cap:
+         print("Camera test successful (simulated or real)")
+         # if isinstance(test_cap, cv2.VideoCapture): test_cap.release()
+     else:
+         print("Camera test failed.")
+         
+     # Example: Test model loading was successful
+     config = run_detection()
+     if config['model']:
+         print("\nYOLO model appears to be loaded.")
+     else:
+         print("\nYOLO model failed to load or is None.")
