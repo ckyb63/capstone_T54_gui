@@ -6,7 +6,11 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QLabel, QPushButton, QGridLayout,
                              QLineEdit, QMessageBox, QFrame, QFormLayout, QTextEdit)
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
-from PySide6.QtGui import QFont, QPalette, QColor, QImage, QPixmap
+from PySide6.QtGui import QFont, QPalette, QColor, QImage, QPixmap, QPainter, QPen
+import cv2 # Import cv2 here
+import torch # Import torch here
+import threading # Import threading here
+import platform # Import platform here
 
 # Import AVend API if available, otherwise create a mock
 try:
@@ -29,52 +33,282 @@ except ImportError:
             print(f"Mock: Dispensing {code}")
             return {"success": True, "response": f"Mock dispensed {code}"}
 
-# Try to import the detection model, create a mock if not available
+# Try to import the detection model components
 try:
-    from capstone_model import run_detection
+    # Import helper functions and the run_detection function that returns the model/config
+    from capstone_model import run_detection, try_open_camera, get_linux_cameras, print_camera_info
     HAS_DETECTION_MODEL = True
-except ImportError:
+except ImportError as e:
+    print(f"ERROR importing from capstone_model: {e}")
     HAS_DETECTION_MODEL = False
-    def run_detection(callback):
-        print("Mock detection model: No real model available")
-        if callback:
-            callback(None)
+    # Define mock functions if import fails
+    def run_detection(): return {'model': None} # Return dict with None model
+    def try_open_camera(idx, **kwargs): return None
+    def get_linux_cameras(): return []
+    def print_camera_info(cap, idx): pass
 
 class DetectionThread(QThread):
-    detection_signal = Signal(dict)
-    camera_status_signal = Signal(bool)
-    frame_signal = Signal(QImage)
+    detection_signal = Signal(dict) # Emits latest detection states AND boxes
+    camera_status_signal = Signal(object) # Use object to allow None, True, False
+    frame_signal = Signal(QImage) # Emits raw frames for display
 
     def __init__(self):
         super().__init__()
         self.is_running = True
+        self.config = None
+        self.model = None
+        self.cap = None
+        self.lock = threading.Lock()
+        self.latest_states = {
+            "hardhat": False,
+            "glasses": False,
+            "beardnet": False,
+            "earplugs": False,
+            "gloves": False
+        } # Shared state, protected by lock
+        self.latest_boxes = [] # Store the list of boxes from the last prediction
+        self.prediction_running = False
+        self._initial_camera_status_sent = False
+
+    def _run_prediction(self, frame_copy):
+        """Runs YOLO prediction in a separate thread."""
+        # print("Starting prediction sub-thread...") # Debug
+        # Initialize locals for THIS prediction run
+        prediction_states = {key: False for key in self.latest_states}
+        prediction_boxes = []
+        device_to_use = 'cpu' # Default to CPU
+        detection_summary = [] # For logging detections to terminal
+
+        try:
+            if self.model is None:
+                 print("Prediction skipped: Model not loaded.")
+                 # Ensure state reflects no detection if model is missing
+                 with self.lock:
+                    self.latest_states = prediction_states # All False
+                    self.latest_boxes = prediction_boxes # Empty
+                 return # Don't reset flag here, finally block will handle it
+
+            # Determine device
+            if torch.cuda.is_available():
+                device_to_use = 'cuda:0'
+            
+            # Predict
+            results = self.model.predict(frame_copy, conf=0.5, verbose=False, stream=True, device=device_to_use)
+            
+            # Process results
+            processed_a_result = False
+            for result in results:
+                processed_a_result = True
+                if result.boxes: # If detections found
+                    for box in result.boxes:
+                        class_index = int(box.cls)
+                        confidence = float(box.conf) # Get confidence score
+                        if self.model.names:
+                            class_name = self.model.names[class_index].lower()
+                            if class_name in self.config['class_map']:
+                                button_key = self.config['class_map'][class_name]
+                                prediction_states[button_key] = True # Update local state
+                                try:
+                                     coords = box.xyxy[0].cpu().numpy().astype(int)
+                                     # Store coords, label, AND confidence
+                                     prediction_boxes.append({'coords': coords.tolist(), 'label': class_name, 'conf': confidence}) 
+                                     # Add to terminal summary
+                                     detection_summary.append(f"{class_name} ({confidence:.2f})")
+                                except Exception as e:
+                                     print(f"Error processing box data: {e}")
+                break # Process only first result from stream
+                
+            # Print detection summary to terminal if anything was found
+            if detection_summary:
+                 print(f"[Detection] Found: {', '.join(detection_summary)}")
+            else:
+                 # Optionally print if nothing was found above threshold
+                 # print("[Detection] No objects found (conf > 0.5)")
+                 pass 
+                 
+            # Update shared state AFTER processing
+            with self.lock:
+                self.latest_states = prediction_states
+                self.latest_boxes = prediction_boxes
+                
+        except Exception as e:
+            print(f"Error during prediction sub-thread: {e}")
+            import traceback
+            traceback.print_exc()
+            # On error, explicitly clear the shared state to avoid staleness
+            print("Clearing detection state due to prediction error.")
+            with self.lock:
+                self.latest_states = {key: False for key in self.latest_states}
+                self.latest_boxes = []
+        finally:
+            # Ensure the prediction running flag is always reset
+            with self.lock:
+                self.prediction_running = False
+            # print("Prediction sub-thread finished.") # Debug
 
     def run(self):
-        def detection_callback(detection_states, frame=None):
-            if detection_states is None:
-                self.camera_status_signal.emit(False)
-                if not HAS_DETECTION_MODEL:
-                    mock_states = {
-                        "hardhat": True,
-                        "glasses": True,
-                        "beardnet": True,
-                        "earplugs": True,
-                        "gloves": True
-                    }
-                    self.detection_signal.emit(mock_states)
-            else:
-                self.camera_status_signal.emit(True)
-                self.detection_signal.emit(detection_states)
-                
-                if frame is not None:
-                    height, width, channel = frame.shape
-                    bytes_per_line = 3 * width
-                    q_image = QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
-                    self.frame_signal.emit(q_image)
+        """Main worker loop for reading frames and dispatching predictions."""
+        # Initial setup
+        try:
+            self.config = run_detection() # Get model and config
+            self.model = self.config.get('model')
+            
+            if self.model is None:
+                print("DetectionThread: Model not loaded. Cannot run detection.")
+                self.camera_status_signal.emit(None) # Indicate failure
+                self._initial_camera_status_sent = True
+                # Keep thread alive but do nothing, or exit? Let's exit for now.
+                return 
 
-        run_detection(detection_callback)
+            print("\nInitializing camera detection system in DetectionThread...")
+            print("----------------------------------------")
+            self.camera_status_signal.emit(None) # Signal initializing
+            self._initial_camera_status_sent = True
+            
+            # --- Camera Opening Logic (copied from old _detection_worker) ---
+            self.cap = None
+            if platform.system() != "Windows":
+                preferred_indices = [1, 2, 0] 
+                for index in preferred_indices:
+                    print(f"\n--- Trying camera index {index} ---")
+                    self.cap = try_open_camera(index, max_retries=2, retry_delay=1.5)
+                    if self.cap:
+                        print(f"--- Successfully opened camera index {index} ---")
+                        break
+                if not self.cap:
+                     print("\nFailed to open any preferred camera indices on Linux.")
+            else:
+                print("\n--- Trying external camera (index 1) ---")
+                self.cap = try_open_camera(1, max_retries=3, retry_delay=1.5)
+                if self.cap is None:
+                    print("\n--- External camera failed, trying built-in camera (index 0) ---")
+                    self.cap = try_open_camera(0, max_retries=2, retry_delay=1.0)
+            
+            # --- Check if camera opened --- 
+            if self.cap is None or not self.cap.isOpened():
+                print("\n############################################")
+                print("FATAL: Failed to initialize ANY camera in DetectionThread.")
+                print("############################################")
+                self.camera_status_signal.emit(False) # Signal disconnected
+                return # Exit thread if camera fails
+            
+            print("\nCamera setup complete. Starting detection loop...")
+            self.camera_status_signal.emit(True) # Signal connected
+            
+            frame_count = 0
+            fps_start_time = time.time()
+            read_fps_start_time = time.time()
+            fps_frame_count = 0
+            read_frame_count = 0
+            target_frame_time = 1.0 / self.config.get('display_fps', 30) # Target time per frame
+
+            while self.is_running:
+                loop_start_time = time.time()
+                
+                # --- Read Frame --- 
+                ret, frame = self.cap.read()
+                read_time = time.time() - loop_start_time
+                
+                if not ret:
+                    print(f"Error reading frame (read took {read_time:.4f}s). Retrying...")
+                    time.sleep(0.5) # Wait before retrying
+                    continue
+                
+                read_frame_count += 1
+                frame_count += 1
+                fps_frame_count += 1
+                
+                # --- Emit Raw Frame --- 
+                # Moved this emission earlier, before potentially heavy state emission
+                if frame is not None:
+                    try:
+                        # Convert raw frame for GUI display
+                        display_frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        h, w, ch = display_frame_rgb.shape
+                        bytes_per_line = ch * w
+                        qt_image = QImage(display_frame_rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
+                        self.frame_signal.emit(qt_image)
+                        # emit_success = True # Flag not strictly needed here
+                    except Exception as e:
+                         print(f"Error converting/emitting frame: {e}")
+
+                # --- Emit Current States AND Boxes --- 
+                try:
+                    with self.lock:
+                        # Combine states and boxes into one payload
+                        payload = {
+                            'states': self.latest_states.copy(),
+                            'boxes': self.latest_boxes # Send the current list of boxes from last prediction
+                        }
+                    self.detection_signal.emit(payload)
+                except Exception as e:
+                    print(f"Error emitting detection payload: {e}")
+                    
+                # --- Dispatch Prediction (Non-Blocking) --- 
+                detection_interval = self.config.get('detection_interval', 5)
+                with self.lock:
+                    pred_running = self.prediction_running # Check flag safely
+                
+                if frame_count % detection_interval == 0 and not pred_running:
+                    try:
+                        # Set flag before starting thread
+                        with self.lock:
+                             self.prediction_running = True
+                        # print("Dispatching prediction thread...") # Debug
+                        predict_thread = threading.Thread(target=self._run_prediction, args=(frame.copy(),), daemon=True)
+                        predict_thread.start()
+                    except Exception as e:
+                        print(f"Error starting prediction thread: {e}")
+                        # Reset flag if thread failed to start
+                        with self.lock:
+                             self.prediction_running = False
+                            
+                # --- FPS Logging --- 
+                current_time = time.time()
+                if current_time - fps_start_time >= 5.0: # Print every 5 seconds
+                    loop_fps = fps_frame_count / (current_time - fps_start_time)
+                    actual_read_fps = read_frame_count / (current_time - read_fps_start_time)
+                    with self.lock:
+                        pred_running_status = self.prediction_running
+                    print(f"Stats (5s avg): Loop FPS: {loop_fps:.2f}, Read FPS: {actual_read_fps:.2f}, Last read: {read_time:.4f}s, Predicting: {pred_running_status}")
+                    fps_frame_count = 0
+                    read_frame_count = 0
+                    fps_start_time = current_time
+                    read_fps_start_time = current_time
+                    
+                # --- Loop Rate Control --- 
+                # Aim for the display_fps rate
+                loop_end_time = time.time()
+                loop_duration = loop_end_time - loop_start_time
+                sleep_time = max(0, target_frame_time - loop_duration)
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
+            
+            # --- Cleanup --- 
+            print("Exiting detection loop. Cleaning up camera resources...")
+            if self.cap:
+                self.cap.release()
+            print("DetectionThread cleanup complete.")
+            self.camera_status_signal.emit(False) # Final disconnect signal
+            
+        except Exception as e:
+            print(f"\n--- CRITICAL ERROR IN DetectionThread RUN METHOD ---")
+            print(f"Error Type: {type(e).__name__}")
+            print(f"Error Message: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            print("--------------------------------------------------")
+            if not self._initial_camera_status_sent:
+                 self.camera_status_signal.emit(None) # Ensure status is sent if error before loop
+            else:
+                 self.camera_status_signal.emit(False) # Signal disconnect due to error
+            # Attempt cleanup even on error
+            if self.cap and self.cap.isOpened():
+                 self.cap.release()
+                 print("Camera released after error.")
 
     def stop(self):
+        print("DetectionThread stop called.")
         self.is_running = False
 
 class MainWindow(QMainWindow):
@@ -436,9 +670,11 @@ Safety Override:
         
         # Camera feed
         self.camera_feed = QLabel()
-        # Calculate size based on button dimensions plus spacing
-        camera_width = 2 * 180 + 20  # 2 buttons wide + spacing
-        camera_height = 2 * 120 + 20  # 2 buttons high + spacing
+        # Calculate size based on button dimensions plus spacing -> Change to fixed size
+        # camera_width = 2 * 180 + 20  # 2 buttons wide + spacing
+        # camera_height = 2 * 120 + 20  # 2 buttons high + spacing
+        camera_width = 640 # Match capture width
+        camera_height = 480 # Match capture height
         self.camera_feed.setMinimumSize(camera_width, camera_height)
         self.camera_feed.setStyleSheet("""
             QLabel {
@@ -528,7 +764,8 @@ Safety Override:
             self.ppe_buttons[key] = button
 
         # Add camera feed and button grid to content layout
-        content_layout.addWidget(self.camera_feed, 2)  # 2/3 width
+        # Adjust stretch factors to give camera more space
+        content_layout.addWidget(self.camera_feed, 3)  # Give camera feed 3/4 width (was 2)
         
         # Create a container for the button grid
         button_container = QWidget()
@@ -536,7 +773,7 @@ Safety Override:
         button_container_layout.addStretch(1)
         button_container_layout.addLayout(button_grid)
         button_container_layout.addStretch(1)
-        content_layout.addWidget(button_container, 1)  # 1/3 width
+        content_layout.addWidget(button_container, 1)  # Give buttons 1/4 width (was 1)
 
         # Add all sections to main content layout
         main_content_layout.addLayout(header_layout)
@@ -559,7 +796,7 @@ Safety Override:
         
         # Start detection thread
         self.detection_thread = DetectionThread()
-        self.detection_thread.detection_signal.connect(self.update_button_states)
+        self.detection_thread.detection_signal.connect(self.update_button_states_and_boxes)
         self.detection_thread.camera_status_signal.connect(self.update_camera_status)
         self.detection_thread.frame_signal.connect(self.update_camera_feed)
         self.detection_thread.start()
@@ -567,63 +804,87 @@ Safety Override:
         # Flag to track if first manual dispense has been done
         self.first_dispense_done = False
 
-    def update_button_states(self, detection_states):
-        """Update button colors based on detection states"""
-        print(f"Received detection states: {detection_states}")
-        for key, detected in detection_states.items():
-            print(f"Processing key: {key}, detected: {detected}")
-            if key in self.ppe_buttons:
-                button = self.ppe_buttons[key]
-                print(f"Found button for {key}: {button.text()}")
-                if detected:
-                    print(f"Setting {key} button to GREEN (detected)")
-                    button.setStyleSheet(f"""
-                        QPushButton {{
-                            background-color: {self.success_color};
-                            color: white;
-                            border-radius: 12px;
-                            font-size: 18px;
-                            font-weight: bold;
-                            padding: 12px;
-                            margin: 4px;
-                        }}
-                        QPushButton:hover {{
-                            background-color: #2CB14F;
-                            padding: 10px;
-                            margin: 6px;
-                        }}
-                        QPushButton:pressed {{
-                            background-color: #248F3F;
-                            padding: 12px;
-                            margin: 4px;
-                        }}
-                    """)
-                else:
-                    if key == "override":
-                        print(f"Setting override button to ORANGE")
+        self.latest_received_boxes = [] # Store the latest boxes for drawing
+        self.detection_resolution = (640, 480) # Store the resolution used for detection
+        self.ppe_missing_counters = { # Counters for state persistence
+            "hardhat": 0,
+            "glasses": 0,
+            "beardnet": 0,
+            "earplugs": 0,
+            "gloves": 0
+        }
+        self.MISS_THRESHOLD = 50 # Consecutive misses needed to turn button RED
+
+    def update_button_states_and_boxes(self, detection_payload):
+        """Update button colors with persistence AND store the latest bounding boxes."""
+        # print(f"Received detection payload: {detection_payload}") # Verbose Debug
+        
+        # --- Update Button States with Persistence --- #
+        if 'states' in detection_payload:
+            latest_states = detection_payload['states']
+            # print(f"Updating button states: {latest_states}") # Debug
+            for key, button in self.ppe_buttons.items():
+                if key == 'override': # Skip override button
+                    continue
+
+                if key in latest_states:
+                    if latest_states[key]: # Item DETECTED in this cycle
+                        self.ppe_missing_counters[key] = 0 # Reset miss counter
+                        # Set button GREEN
                         button.setStyleSheet(f"""
                             QPushButton {{
-                                background-color: {self.secondary_color};
+                                background-color: {self.success_color};
                                 color: white;
                                 border-radius: 12px;
-                                font-size: 20px;
+                                font-size: 18px;
                                 font-weight: bold;
                                 padding: 12px;
                                 margin: 4px;
                             }}
                             QPushButton:hover {{
-                                background-color: #E59400;
+                                background-color: #2CB14F;
                                 padding: 10px;
                                 margin: 6px;
                             }}
                             QPushButton:pressed {{
-                                background-color: #CC8400;
+                                background-color: #248F3F;
                                 padding: 12px;
                                 margin: 4px;
                             }}
                         """)
-                    else:
-                        print(f"Setting {key} button to RED (not detected)")
+                    else: # Item NOT DETECTED in this cycle
+                        self.ppe_missing_counters[key] += 1
+                        # print(f" {key} miss count: {self.ppe_missing_counters[key]}") # Debug
+                        # Only turn RED if missing threshold is met
+                        if self.ppe_missing_counters[key] >= self.MISS_THRESHOLD:
+                            # Set button RED
+                            button.setStyleSheet(f"""
+                                QPushButton {{
+                                    background-color: {self.danger_color};
+                                    color: white;
+                                    border-radius: 12px;
+                                    font-size: 18px;
+                                    font-weight: bold;
+                                    padding: 12px;
+                                    margin: 4px;
+                                }}
+                                QPushButton:hover {{
+                                    background-color: #CC2A25;
+                                    padding: 10px;
+                                    margin: 6px;
+                                }}
+                                QPushButton:pressed {{
+                                    background-color: #B32620;
+                                    padding: 12px;
+                                    margin: 4px;
+                                }}
+                            """)
+                else:
+                    # Handle case where key is missing from states (shouldn't happen often)
+                    # Option: Treat as a miss or keep current state? Let's treat as miss.
+                    print(f"Warning: State for button key {key} not found in detection results. Incrementing miss counter.")
+                    self.ppe_missing_counters[key] += 1
+                    if self.ppe_missing_counters[key] >= self.MISS_THRESHOLD:
                         button.setStyleSheet(f"""
                             QPushButton {{
                                 background-color: {self.danger_color};
@@ -644,9 +905,18 @@ Safety Override:
                                 padding: 12px;
                                 margin: 4px;
                             }}
-                        """)
-            else:
-                print(f"Warning: No button found for key {key}")
+                        """) # Set Red if threshold met
+
+        else:
+            print("Warning: 'states' key not found in detection_payload")
+
+        # --- Store latest boxes --- #
+        if 'boxes' in detection_payload:
+            # print(f"Received boxes: {detection_payload['boxes']}") # Debug
+            self.latest_received_boxes = detection_payload['boxes']
+        else:
+            print("Warning: 'boxes' key not found in detection_payload")
+            self.latest_received_boxes = [] # Clear boxes if not received
 
     def update_camera_status(self, is_connected):
         """Update title color based on camera status"""
@@ -667,87 +937,110 @@ Safety Override:
         print("-----------------------")
 
     def update_camera_feed(self, q_image):
-        """Update the camera feed display with the latest frame"""
+        """Update the camera feed display, drawing latest boxes if available."""
         try:
-            # Cache the label size to avoid repeated calculations
-            if not hasattr(self, '_label_size'):
-                self._label_size = (self.camera_feed.width(), self.camera_feed.height())
-                print(f"\nInitialized camera feed display size: {self._label_size}")
-                print("Waiting for first frame...")
+            label_width = self.camera_feed.width()
+            label_height = self.camera_feed.height()
             
-            if q_image is None:
-                if not hasattr(self, '_null_frame_count'):
-                    self._null_frame_count = 0
-                self._null_frame_count += 1
+            if label_width <= 0 or label_height <= 0:
+                return # Don't process if label has no size
                 
-                if self._null_frame_count % 10 == 0:  # Only print every 10th null frame
-                    print(f"\nReceived null frame (count: {self._null_frame_count})")
+            self._label_size = (label_width, label_height)
+            
+            if q_image is None or q_image.isNull():
+                # print("Received null frame in update_camera_feed") # Debug
                 return
                 
-            # Reset null frame counter when we get a valid frame
-            if hasattr(self, '_null_frame_count'):
-                self._null_frame_count = 0
-            
-            # Track frame statistics
-            if not hasattr(self, '_frame_count'):
-                self._frame_count = 0
-                self._last_fps_time = time.time()
-                self._last_frame_time = time.time()
-            
-            self._frame_count += 1
+            # --- Frame Rate Logging --- 
             current_time = time.time()
+            if not hasattr(self, '_gui_frame_count'): # Use a different counter name
+                self._gui_frame_count = 0
+                self._gui_last_fps_time = current_time
+            self._gui_frame_count += 1
+            if current_time - self._gui_last_fps_time >= 1.0:
+                fps = self._gui_frame_count / (current_time - self._gui_last_fps_time)
+                print(f"\nGUI Frame Update FPS: {fps:.2f}")
+                self._gui_frame_count = 0
+                self._gui_last_fps_time = current_time
             
-            # Calculate and print FPS every second
-            if current_time - self._last_fps_time >= 1.0:
-                fps = self._frame_count / (current_time - self._last_fps_time)
-                frame_interval = (current_time - self._last_fps_time) / self._frame_count
-                print(f"\nGUI Frame Stats:")
-                print(f"FPS: {fps:.2f}")
-                print(f"Frame interval: {frame_interval*1000:.1f}ms")
-                print(f"Frame size: {q_image.width()}x{q_image.height()}")
-                self._frame_count = 0
-                self._last_fps_time = current_time
+            # --- Scaling --- 
+            img_width = q_image.width()
+            img_height = q_image.height()
             
-            self._last_frame_time = current_time
-            
-            # Calculate scaling while preserving aspect ratio
-            src_aspect = q_image.width() / q_image.height()
-            dst_aspect = self._label_size[0] / self._label_size[1]
-            
+            if img_width == 0 or img_height == 0:
+                # print("Received frame with zero dimension") # Debug
+                return
+
+            # Calculate final display size preserving aspect ratio
+            # (This logic determines the size of the pixmap we draw onto)
+            final_pixmap_width = img_width
+            final_pixmap_height = img_height
+            src_aspect = img_width / img_height
+            dst_aspect = label_width / label_height
             if src_aspect > dst_aspect:
-                # Image is wider than display area
-                new_width = self._label_size[0]
-                new_height = int(new_width / src_aspect)
+                 final_pixmap_width = label_width
+                 final_pixmap_height = int(final_pixmap_width / src_aspect)
             else:
-                # Image is taller than display area
-                new_height = self._label_size[1]
-                new_width = int(new_height * src_aspect)
+                 final_pixmap_height = label_height
+                 final_pixmap_width = int(final_pixmap_height * src_aspect)
+
+            # Create base pixmap (scaled if necessary)
+            pixmap = QPixmap.fromImage(q_image).scaled(
+                final_pixmap_width,
+                final_pixmap_height,
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation
+            )
             
-            # Only scale if needed and use high-quality scaling
-            if q_image.width() != new_width or q_image.height() != new_height:
-                scaled_pixmap = QPixmap.fromImage(q_image).scaled(
-                    new_width,
-                    new_height,
-                    Qt.KeepAspectRatio,
-                    Qt.SmoothTransformation
-                )
-            else:
-                scaled_pixmap = QPixmap.fromImage(q_image)
+            # --- Draw Bounding Boxes --- 
+            if self.latest_received_boxes: # Check if there are boxes to draw
+                 # print(f"Drawing {len(self.latest_received_boxes)} boxes.") # Debug
+                 # Calculate scaling factors from original detection res to current pixmap size
+                 original_w, original_h = self.detection_resolution
+                 scale_x = pixmap.width() / original_w
+                 scale_y = pixmap.height() / original_h
+                 
+                 # Create painter
+                 painter = QPainter(pixmap)
+                 pen = QPen(Qt.green, 2) # Green pen, 2 pixels wide
+                 painter.setPen(pen)
+                 painter.setFont(QFont('Arial', 10)) # Font for labels
+                 
+                 for box_data in self.latest_received_boxes:
+                      try:
+                          coords = box_data['coords'] # [x1, y1, x2, y2]
+                          label = box_data['label']
+                          confidence = box_data['conf']
+                          
+                          # Scale coordinates
+                          x1, y1, x2, y2 = [int(c) for c in coords]
+                          scaled_x = int(x1 * scale_x)
+                          scaled_y = int(y1 * scale_y)
+                          scaled_w = int((x2 - x1) * scale_x)
+                          scaled_h = int((y2 - y1) * scale_y)
+                          
+                          # Draw rectangle
+                          painter.drawRect(scaled_x, scaled_y, scaled_w, scaled_h)
+                          
+                          # Draw label WITH confidence above the box
+                          label_text = f"{label} ({confidence:.2f})"
+                          painter.drawText(scaled_x, scaled_y - 5, label_text)
+                          # print(f"Drew box: {label} at {[scaled_x, scaled_y, scaled_w, scaled_h]}") # Debug
+                      except KeyError:
+                           print(f"Error drawing box: 'conf' key missing in {box_data}")
+                      except Exception as draw_e:
+                           print(f"Error drawing box {box_data}: {draw_e}")
+                 
+                 painter.end() # Finish painting
             
-            # Center the image in the label
-            x_offset = max(0, (self._label_size[0] - new_width) // 2)
-            y_offset = max(0, (self._label_size[1] - new_height) // 2)
-            
-            # Clear the label and set style for black background
-            self.camera_feed.setStyleSheet("QLabel { background-color: black; }")
-            
-            # Set the pixmap with proper alignment
-            self.camera_feed.setPixmap(scaled_pixmap)
+            # --- Display Pixmap --- 
+            self.camera_feed.setStyleSheet("QLabel { background-color: black; border-radius: 15px; }")
+            self.camera_feed.setPixmap(pixmap)
             self.camera_feed.setAlignment(Qt.AlignCenter)
             
-            # Clear placeholder text only on first frame
+            # Clear placeholder text only if it exists
             if self.camera_feed.text():
-                print("\nReceived first valid frame, clearing placeholder text")
+                # print("Received first valid frame, clearing placeholder text") # Debug
                 self.camera_feed.setText("")
                 
         except Exception as e:
@@ -862,8 +1155,11 @@ Safety Override:
             
         # Stop the H1 service routine if it's running
         try:
-            self.api.stop_service_routine()
-            print("H1 Service routine stopped")
+            if hasattr(self, 'api') and hasattr(self.api, 'stop_service_routine'):
+                 # Check if stop_service_routine actually exists if using mock API
+                 if callable(self.api.stop_service_routine):
+                     self.api.stop_service_routine()
+                     print("H1 Service routine stopped")
         except Exception as e:
             print(f"Error stopping H1 Service routine: {str(e)}")
             
@@ -995,6 +1291,11 @@ Safety Override:
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    # Ensure imports are available
+    import cv2
+    import torch
+    import threading
+    import platform
     window = MainWindow()
     window.show()
     sys.exit(app.exec()) 
