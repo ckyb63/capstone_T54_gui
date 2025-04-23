@@ -122,7 +122,7 @@ class AvendAPI:
             self.start_session()
             
             # Dispense H1
-            self.dispense(code="H1")
+            self.dispense(code="8H1")
             
             # Wait for the specified interval before next dispense
             time.sleep(self.service_interval)

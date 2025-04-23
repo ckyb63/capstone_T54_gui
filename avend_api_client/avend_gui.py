@@ -37,7 +37,7 @@ class AvendGUI(QMainWindow):
         connection_layout = QFormLayout()
         
         # Add connection settings
-        self.host_input = QLineEdit("10.165.101.252")
+        self.host_input = QLineEdit("192.168.0.3")
         self.port_input = QSpinBox()
         self.port_input.setRange(1, 65535)
         self.port_input.setValue(8080)
@@ -48,20 +48,6 @@ class AvendGUI(QMainWindow):
         connection_layout.addRow("Port:", self.port_input)
         connection_layout.addRow("", self.connect_button)
         connection_group.setLayout(connection_layout)
-        
-        # Second Server Connection settings
-        second_server_group = QGroupBox("Second Server Connection (for '8' button)")
-        second_server_layout = QFormLayout()
-        self.second_host_input = QLineEdit("localhost") # Default host for second server
-        self.second_port_input = QSpinBox()
-        self.second_port_input.setRange(1, 65535)
-        self.second_port_input.setValue(8081) # Default port for second server
-        second_server_layout.addRow("Host:", self.second_host_input)
-        second_server_layout.addRow("Port:", self.second_port_input)
-        self.second_connect_button = QPushButton("Connect Second Server")
-        self.second_connect_button.clicked.connect(self.connect_to_second_server)
-        second_server_layout.addRow("", self.second_connect_button)
-        second_server_group.setLayout(second_server_layout)
         
         # Session control
         session_group = QGroupBox("Session Control")
@@ -146,33 +132,30 @@ class AvendGUI(QMainWindow):
         # Add combination buttons (A1-G9)
         for i, row_label in enumerate(row_labels):
             for j in range(1, 10):
-                code = f"{row_label}{j}"
-                btn = QPushButton(code)
+                original_code = f"{row_label}{j}"
+                code = f"8{original_code}"  # Prepend '8'
+                btn = QPushButton(code)     # Update button text
                 btn.clicked.connect(lambda checked, code=code: self.quick_dispense(code))
                 quick_dispense_layout.addWidget(btn, i+1, j)
                 self.quick_buttons.append(btn)
         
         # Add special buttons (0, *, #, H, J) in an additional row
-        # Place the '8' button first in the special keys row
-        btn_8 = QPushButton("8")
-        btn_8.clicked.connect(lambda: self.send_to_second_server("8"))
-        quick_dispense_layout.addWidget(btn_8, len(row_labels)+1, 1) # Add '8' at column 1
-        self.quick_buttons.append(btn_8)
-
         special_keys = ['0', '*', '#', 'H', 'J']
         for j, key in enumerate(special_keys):
             # Use HTML URL encoding for special characters in the API call
-            display_key = key
+            display_key = f"8{key}" # Prepend '8' to display key
             api_key = key
             if key == '*':
                 api_key = '%2A'  # URL encoded asterisk
             elif key == '#':
                 api_key = '%23'  # URL encoded hash
             
-            btn = QPushButton(display_key)
-            btn.clicked.connect(lambda checked, code=api_key: self.quick_dispense(code))
-            # Shift other special keys to start from column 2
-            quick_dispense_layout.addWidget(btn, len(row_labels)+1, j+2) 
+            api_code = f"8{api_key}" # Prepend '8' to the API code/key
+            
+            btn = QPushButton(display_key) # Use the prepended display key
+            btn.clicked.connect(lambda checked, code=api_code: self.quick_dispense(code)) # Use prepended API code
+            # Shift other special keys to start from column 1 now
+            quick_dispense_layout.addWidget(btn, len(row_labels)+1, j+1) # Start from column 1 now
             self.quick_buttons.append(btn)
         
         quick_dispense_group.setLayout(quick_dispense_layout)
@@ -218,7 +201,6 @@ class AvendGUI(QMainWindow):
         # Add all groups to main layout
         top_layout = QHBoxLayout()
         top_layout.addWidget(connection_group)
-        top_layout.addWidget(second_server_group)
         top_layout.addWidget(session_group)
         
         middle_layout = QHBoxLayout()
@@ -249,27 +231,6 @@ class AvendGUI(QMainWindow):
         # Also attempt to start a session
         self.start_session()
     
-    def connect_to_second_server(self):
-        """Test connection and attempt to start a session on the second server."""
-        host = self.second_host_input.text()
-        port = self.second_port_input.value()
-        url = f"http://{host}:{port}/start_session" # Assuming /start_session endpoint
-        
-        self.log_message(f"Connecting to second server at {host}:{port} and starting session...")
-        
-        try:
-            response = requests.get(url, timeout=5) 
-            response.raise_for_status()
-            
-            self.log_message(f"Second server session response: {response.status_code} - {response.text}")
-            # Optionally display success message
-            # QMessageBox.information(self, "Second Server", f"Connected and session started on second server: {response.text}")
-            
-        except requests.exceptions.RequestException as e:
-            error_msg = f"Error connecting/starting session on second server: {e}"
-            self.log_message(error_msg)
-            QMessageBox.critical(self, "Second Server Error", error_msg)
-
     def start_session(self):
         """Start a new session on the primary API"""
         self.log_message("Starting new primary session...")
@@ -392,27 +353,6 @@ class AvendGUI(QMainWindow):
             self.log_message(f"Failed to dispense: {error_msg}")
             QMessageBox.warning(self, "Dispense Error", f"Failed to dispense: {error_msg}")
             
-    def send_to_second_server(self, data):
-        """Send data (e.g., '8') to the second server."""
-        host = self.second_host_input.text()
-        port = self.second_port_input.value()
-        # Use the /dispense endpoint
-        url = f"http://{host}:{port}/dispense" 
-        
-        self.log_message(f"Sending '{data}' to second server at {url}...")
-        
-        try:
-            # Send a GET request with the data, adjust method/params as needed
-            response = requests.get(url, params={'data': data}, timeout=5) 
-            response.raise_for_status() # Raise an exception for bad status codes (4xx or 5xx)
-            
-            self.log_message(f"Second server response: {response.status_code} - {response.text}")
-            
-        except requests.exceptions.RequestException as e:
-            error_msg = f"Error sending to second server: {e}"
-            self.log_message(error_msg)
-            QMessageBox.critical(self, "Second Server Error", error_msg)
-
     def start_service_routine(self):
         """Start the H1 service routine"""
         interval = self.service_interval_input.value()

@@ -6,6 +6,8 @@ import time
 import threading
 import platform
 import traceback
+import serial
+import serial.tools.list_ports
 
 # Third-Party
 import cv2
@@ -47,7 +49,7 @@ except ImportError as e:
     def print_camera_info(cap, idx): pass
 
 # === Constants ===
-DEFAULT_AVEND_IP = "127.0.0.1"
+DEFAULT_AVEND_IP = "192.168.0.3"
 DEFAULT_AVEND_PORT = "8080"
 CAMERA_FEED_WIDTH = 512
 CAMERA_FEED_HEIGHT = 384
@@ -58,7 +60,7 @@ MISS_THRESHOLD = 50 # Consecutive misses before button turns red
 OVERRIDE_DURATION_MS = 15000 # 15 seconds
 STATUS_RESET_DELAY_MS = 3000 # 3 seconds
 H1_SERVICE_DELAY_MS = 3000 # 3 seconds
-version = "0.8.0"
+version = "0.10.0"
 
 # === Detection Thread ===
 class DetectionThread(QThread):
@@ -318,8 +320,8 @@ class MainWindow(QMainWindow):
         # --- Core Attributes ---
         self.api = AvendAPI(host=DEFAULT_AVEND_IP, port=DEFAULT_AVEND_PORT)
         self.avend_codes = {
-            "hardhat": "A1", "glasses": "A2", "beardnet": "A3",
-            "earplugs": "A4", "gloves": "A5"
+            "hardhat": "8A1", "glasses": "8A2", "beardnet": "8A3",
+            "earplugs": "8A4", "gloves": "8A5"
         }
         self.item_names = {
             "hardhat": "Hard Hat", "glasses": "Safety Glasses", "beardnet": "Beard Net",
@@ -347,6 +349,8 @@ class MainWindow(QMainWindow):
         self.is_settings_visible = False
         self.is_help_visible = False
         self.first_dispense_done = False
+        self.esp32_port_name = None # COM port name for ESP32
+        self.esp32_serial = None    # Serial connection object
 
         # --- Window Setup ---
         self.setWindowTitle(f"PPE Vending Machine {version}")
@@ -391,6 +395,9 @@ class MainWindow(QMainWindow):
 
         # --- Detection Thread --- #
         self._start_detection_thread()
+
+        # Attempt initial ESP32 connection (will use saved/default port if available later)
+        # self._connect_to_esp32() # We'll call this after settings are loaded/saved initially
 
     # === Helper Methods for UI Creation ===
 
@@ -479,11 +486,11 @@ class MainWindow(QMainWindow):
         grid_layout.setSpacing(20)
 
         buttons_config = [
-            ("Hard Hat\n(A1)", "hardhat", 0, 0),
-            ("Beard Net\n(A3)", "beardnet", 0, 1),
-            ("Gloves\n(A5)", "gloves", 1, 0),
-            ("Safety\nGlasses (A2)", "glasses", 1, 1),
-            ("Ear Plugs\n(A4)", "earplugs", 2, 0),
+            ("Hard Hat\n(8A1)", "hardhat", 0, 0),
+            ("Beard Net\n(8A3)", "beardnet", 0, 1),
+            ("Gloves\n(8A5)", "gloves", 1, 0),
+            ("Safety\nGlasses (8A2)", "glasses", 1, 1),
+            ("Ear Plugs\n(8A4)", "earplugs", 2, 0),
             ("OVERRIDE", "override", 2, 1)
         ]
 
@@ -522,7 +529,14 @@ class MainWindow(QMainWindow):
         form_container.setStyleSheet("QFrame { background-color: #F8F9FA; border-radius: 15px; padding: 20px; } QLabel { color: #2C3E50; font-size: 16px; font-weight: bold; }")
         form_layout = QVBoxLayout(form_container)
 
-        # IP/Port Row
+        # --- AVend Settings ---
+        avend_group_box = QFrame()
+        avend_layout = QVBoxLayout(avend_group_box)
+        avend_layout.setContentsMargins(0, 0, 0, 0)
+        avend_title = QLabel("AVend Connection")
+        avend_title.setStyleSheet("font-weight: bold; font-size: 18px; margin-bottom: 10px;")
+        avend_layout.addWidget(avend_title)
+
         ip_port_widget = QWidget()
         ip_port_row_layout = QHBoxLayout(ip_port_widget)
         ip_port_row_layout.setContentsMargins(0,0,0,0)
@@ -543,16 +557,40 @@ class MainWindow(QMainWindow):
         ip_port_row_layout.addWidget(self.avend_ip_input)
         ip_port_row_layout.addWidget(port_label)
         ip_port_row_layout.addWidget(self.avend_port_input)
+        avend_layout.addWidget(ip_port_widget)
+
+        # --- ESP32 Settings ---
+        esp32_group_box = QFrame()
+        esp32_layout = QVBoxLayout(esp32_group_box)
+        esp32_layout.setContentsMargins(0, 15, 0, 0) # Add top margin
+        esp32_title = QLabel("Gate Controller (ESP32)")
+        esp32_title.setStyleSheet("font-weight: bold; font-size: 18px; margin-bottom: 10px;")
+        esp32_layout.addWidget(esp32_title)
+
+        esp32_port_widget = QWidget()
+        esp32_port_layout = QHBoxLayout(esp32_port_widget)
+        esp32_port_layout.setContentsMargins(0, 0, 0, 0)
+        esp32_port_layout.setSpacing(10)
+
+        esp32_label = QLabel("COM Port:")
+        self.esp32_port_input = QLineEdit()
+        self.esp32_port_input.setPlaceholderText("e.g., COM3 or /dev/rfcomm0")
+        self.esp32_port_input.setStyleSheet("QLineEdit { padding: 12px; border: 2px solid #E1E1E1; border-radius: 8px; font-size: 16px; background-color: white; color: #2C3E50; } QLineEdit:focus { border-color: #007AFF; }")
+
+        esp32_port_layout.addWidget(esp32_label)
+        esp32_port_layout.addWidget(self.esp32_port_input, 1) # Give it stretch factor
+        esp32_layout.addWidget(esp32_port_widget)
+
+        # Add widgets to form container
+        form_layout.addWidget(avend_group_box)
+        form_layout.addWidget(esp32_group_box)
+        form_layout.addSpacing(20)
 
         # Save Button
         self.save_settings_btn = QPushButton("Save Settings")
         self.save_settings_btn.setStyleSheet(self._get_button_style_nav()) # Use nav style
         self.save_settings_btn.setMinimumWidth(150)
         self.save_settings_btn.clicked.connect(self.save_settings)
-
-        # Add widgets to form container
-        form_layout.addWidget(ip_port_widget)
-        form_layout.addSpacing(20)
         form_layout.addWidget(self.save_settings_btn, alignment=Qt.AlignCenter)
 
         # Add widgets to main settings layout
@@ -671,6 +709,87 @@ class MainWindow(QMainWindow):
         self.detection_thread.camera_status_signal.connect(self.update_camera_status)
         self.detection_thread.frame_signal.connect(self.update_camera_feed)
         self.detection_thread.start()
+
+    # === Serial Communication Helpers ===
+
+    def _connect_to_esp32(self):
+        """Attempts to connect to the ESP32 on the configured COM port."""
+        if self.esp32_serial and self.esp32_serial.is_open:
+            print("ESP32 serial port already open.")
+            return True
+
+        if not self.esp32_port_name:
+            print("ESP32 COM port not configured in settings.")
+            return False
+
+        try:
+            print(f"Attempting to connect to ESP32 on {self.esp32_port_name}...")
+            # Close previous connection if it exists but isn't open
+            if self.esp32_serial:
+                self.esp32_serial.close()
+
+            self.esp32_serial = serial.Serial(
+                port=self.esp32_port_name,
+                baudrate=115200, # Match ESP32 code
+                timeout=1,       # Read timeout
+                write_timeout=1  # Write timeout
+            )
+            # Wait briefly for connection to establish
+            time.sleep(2) # Recommended after opening serial
+            if self.esp32_serial.is_open:
+                print(f"Successfully connected to ESP32 on {self.esp32_port_name}.")
+                self._send_to_esp32("lock") # Send initial lock command
+                return True
+            else:
+                print(f"Failed to open ESP32 serial port {self.esp32_port_name} (is_open is False).")
+                self.esp32_serial = None # Clear if connection failed
+                return False
+        except serial.SerialException as e:
+            print(f"ERROR connecting to ESP32 on {self.esp32_port_name}: {e}")
+            QMessageBox.warning(self, "ESP32 Connection Error", f"Could not connect to {self.esp32_port_name}.\nError: {e}\n\nPlease check the port name and ensure the device is paired/connected.")
+            self.esp32_serial = None # Clear if connection failed
+            return False
+        except Exception as e:
+            print(f"Unexpected ERROR during ESP32 connection: {e}")
+            QMessageBox.critical(self, "ESP32 Error", f"An unexpected error occurred during ESP32 connection: {e}")
+            self.esp32_serial = None # Clear if connection failed
+            return False
+
+    def _send_to_esp32(self, command):
+        """Sends a command string to the connected ESP32."""
+        if not self.esp32_serial or not self.esp32_serial.is_open:
+            print(f"ESP32 not connected. Cannot send command: '{command}'")
+            # Attempt to reconnect?
+            # if not self._connect_to_esp32():
+            #     QMessageBox.warning(self, "ESP32 Error", "Cannot send command: ESP32 is not connected.")
+            #     return
+            # else: # Reconnect successful, try sending again
+            #      pass # Continue to send below
+            return # For now, just return if not connected
+
+        try:
+            command_bytes = f"{command}\n".encode('utf-8')
+            print(f"Sending to ESP32: {command_bytes.decode().strip()}")
+            self.esp32_serial.write(command_bytes)
+            self.esp32_serial.flush() # Ensure data is sent
+            # Optionally read response? The ESP32 sends back confirmations.
+            # response = self.esp32_serial.readline().decode('utf-8').strip()
+            # if response:
+            #     print(f"ESP32 Response: {response}")
+            # else:
+            #     print("ESP32: No response within timeout.")
+        except serial.SerialTimeoutException:
+            print(f"ERROR sending '{command}' to ESP32: Write timeout.")
+            QMessageBox.warning(self, "ESP32 Communication Error", "Write timed out while sending command to ESP32.")
+        except serial.SerialException as e:
+            print(f"ERROR sending '{command}' to ESP32: {e}")
+            QMessageBox.warning(self, "ESP32 Communication Error", f"Serial error sending command to ESP32: {e}")
+            # Consider closing the port on error
+            # self.esp32_serial.close()
+            # self.esp32_serial = None
+        except Exception as e:
+            print(f"Unexpected ERROR sending '{command}' to ESP32: {e}")
+            QMessageBox.critical(self, "ESP32 Error", f"An unexpected error occurred sending command to ESP32: {e}")
 
     # === Event Handlers / Slots ===
     @Slot(dict)
@@ -817,6 +936,8 @@ class MainWindow(QMainWindow):
         if self.override_active: return
 
         print("OVERRIDE ACTIVATED")
+        self._send_to_esp32("unlock") # <<< Send unlock command to ESP32
+
         self.override_active = True
         self.override_seconds_left = OVERRIDE_DURATION_MS // 1000 # Use constant
 
@@ -845,6 +966,8 @@ class MainWindow(QMainWindow):
     def reset_override_state(self):
         """Resets the UI and state after the override period ends."""
         print("Resetting override state...")
+        self._send_to_esp32("lock") # <<< Send lock command to ESP32
+
         self.override_active = False
         self.gate_status.setText("Gate LOCKED")
         self._set_gate_style_locked()
@@ -943,24 +1066,54 @@ class MainWindow(QMainWindow):
         self.is_settings_visible = not self.is_settings_visible
 
     def save_settings(self):
-        """Saves AVend IP/Port settings and reinitializes the API."""
+        """Saves AVend IP/Port and ESP32 COM port settings and reinitializes connections."""
+        # AVend Settings
         host = self.avend_ip_input.text()
         port_str = self.avend_port_input.text()
+        avend_saved = False
         try:
             port = int(port_str)
             if not (0 < port < 65536):
                  raise ValueError("Port number out of range")
             self.api = AvendAPI(host=host, port=port)
             print(f"AVend API settings saved and reinitialized: {host}:{port}")
-            self.toggle_settings() # Return to main view
+            avend_saved = True
         except ValueError as ve:
-            QMessageBox.warning(self, "Settings Error", f"Invalid port number: {port_str}. {ve}")
+            QMessageBox.warning(self, "Settings Error", f"Invalid AVend port number: {port_str}. {ve}")
         except Exception as e:
-            QMessageBox.critical(self, "Settings Error", f"Failed to save settings or reinitialize API: {str(e)}")
+            QMessageBox.critical(self, "Settings Error", f"Failed to save AVend settings or reinitialize API: {str(e)}")
+
+        # ESP32 Settings
+        esp32_port = self.esp32_port_input.text().strip()
+        esp32_connected = False
+        if esp32_port:
+            self.esp32_port_name = esp32_port
+            print(f"ESP32 COM Port set to: {self.esp32_port_name}")
+            # Attempt to connect immediately after saving
+            esp32_connected = self._connect_to_esp32()
+        else:
+            print("ESP32 COM Port cleared.")
+            self.esp32_port_name = None
+            if self.esp32_serial and self.esp32_serial.is_open:
+                self.esp32_serial.close()
+                print("Closed existing ESP32 serial connection.")
+            self.esp32_serial = None
+
+        # Feedback and close settings view
+        if avend_saved:
+             if esp32_port and not esp32_connected:
+                  QMessageBox.information(self, "Settings Saved", f"AVend settings saved for {host}:{port}.\nFailed to connect to ESP32 on {esp32_port}.")
+             elif esp32_port and esp32_connected:
+                  QMessageBox.information(self, "Settings Saved", f"AVend settings saved for {host}:{port}.\nSuccessfully connected to ESP32 on {esp32_port}.")
+             else:
+                  QMessageBox.information(self, "Settings Saved", f"AVend settings saved for {host}:{port}. ESP32 port not set.")
+             self.toggle_settings() # Return to main view only if AVend settings were valid
+        # else: Keep settings view open if AVend settings were invalid
 
     def closeEvent(self, event):
-        """Handles the window close event, ensuring threads are stopped."""
-        print("Close event triggered. Stopping threads...")
+        """Handles the window close event, ensuring threads and connections are stopped."""
+        print("Close event triggered. Stopping threads and connections...")
+        # Stop Detection Thread
         if hasattr(self, 'detection_thread') and self.detection_thread.isRunning():
             self.detection_thread.stop()
             if not self.detection_thread.wait(5000):
@@ -969,10 +1122,12 @@ class MainWindow(QMainWindow):
                  self.detection_thread.wait()
             print("Detection thread stopped.")
 
+        # Stop Override Timer
         if hasattr(self, 'override_timer') and self.override_timer.isActive():
             self.override_timer.stop()
             print("Override timer stopped.")
 
+        # Stop H1 Service (if applicable)
         if hasattr(self, 'api') and hasattr(self.api, 'stop_service_routine'):
             try:
                  if callable(self.api.stop_service_routine):
@@ -980,6 +1135,20 @@ class MainWindow(QMainWindow):
                      print("H1 Service routine stopped.")
             except Exception as e:
                 print(f"Error stopping H1 Service routine: {str(e)}")
+
+        # Close Serial Port
+        if hasattr(self, 'esp32_serial') and self.esp32_serial and self.esp32_serial.is_open:
+            try:
+                print(f"Closing ESP32 serial port {self.esp32_port_name}...")
+                # Maybe send a final 'lock' command?
+                # self._send_to_esp32("lock")
+                # time.sleep(0.1)
+                self.esp32_serial.close()
+                print("ESP32 serial port closed.")
+            except serial.SerialException as e:
+                print(f"Error closing ESP32 serial port: {e}")
+            except Exception as e:
+                print(f"Unexpected error closing ESP32 serial port: {e}")
 
         super().closeEvent(event)
 
