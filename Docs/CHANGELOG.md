@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.10.0] - 2025-April-23
+
+- Among other changes, added ESP32 support in the GUI.
+- Ensured the API has now the correcty set static IPs and Port
+- Readded ESP32 code.
+- API now works with the 8 as a prefix, it is prepended to the dispense commands.
+- Ensured the torch and pytorch versions to correcly work with the jetson.
+  - torch==2.1.0
+  - torchvision==0.16.0
+
 ## [0.7.0] - 2025-April-07
 
 - Fixed Camera Detection using OpenCV

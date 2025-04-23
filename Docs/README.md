@@ -1,9 +1,7 @@
 # Windows version of PPE GUI with AVEND API Focus
 
-[![Latest Version](https://img.shields.io/badge/Log-v0.7.0-blue.svg)](CHANGELOG.md)
-[![Python Version](https://img.shields.io/badge/Python-3.10.11-blue.svg?logo=python&logoColor=white)](https://www.python.org/downloads/release/python-31011/)
-![PySide6](https://img.shields.io/badge/PySide6-6.9.0-blue.svg?logo=qt&logoColor=white)
-![Yolo](https://img.shields.io/badge/Yolo-vSomething-purple.svg)
+[![Latest Version](https://img.shields.io/badge/Log-v0.10.0-blue.svg)](CHANGELOG.md)
+[![Python Version](https://img.shields.io/badge/Python-3.8-blue.svg?logo=python&logoColor=white)](https://www.python.org/downloads/release/python-3811/)
 ![Status](https://img.shields.io/badge/Status-Active-darkgreen.svg)
 
 ## Overview
