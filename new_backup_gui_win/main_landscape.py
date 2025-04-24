@@ -51,11 +51,11 @@ except ImportError as e:
 # === Constants ===
 DEFAULT_AVEND_IP = "192.168.0.3"
 DEFAULT_AVEND_PORT = "8080"
-CAMERA_FEED_WIDTH = 512
-CAMERA_FEED_HEIGHT = 384
+CAMERA_FEED_WIDTH = 400
+CAMERA_FEED_HEIGHT = 300
 DETECTION_RESOLUTION = (640, 480) # Resolution used during model detection
-BUTTON_WIDTH = 170
-BUTTON_HEIGHT = 100
+BUTTON_WIDTH = 150
+BUTTON_HEIGHT = 90
 MISS_THRESHOLD = 50 # Consecutive misses before button turns red
 OVERRIDE_DURATION_MS = 15000 # 15 seconds
 STATUS_RESET_DELAY_MS = 3000 # 3 seconds
@@ -85,7 +85,7 @@ class DetectionThread(QThread):
         self.lock = threading.Lock()
         # Initial state assumes nothing detected
         self.latest_states = {
-            "hardhat": False, "glasses": False, "beardnet": False,
+            "hardhat": False, "glasses": False, "vest": False,
             "earplugs": False, "gloves": False
         }
         self.latest_boxes = []
@@ -320,11 +320,14 @@ class MainWindow(QMainWindow):
         # --- Core Attributes ---
         self.api = AvendAPI(host=DEFAULT_AVEND_IP, port=DEFAULT_AVEND_PORT)
         self.avend_codes = {
-            "hardhat": "8A1", "glasses": "8A2", "beardnet": "8A3",
-            "earplugs": "8A4", "gloves": "8A5"
+            "hardhat": "8A1", 
+            "glasses": "8A2", 
+            "vest": "8A3",
+            "earplugs": "8A4",
+            "gloves": "8A5"
         }
         self.item_names = {
-            "hardhat": "Hard Hat", "glasses": "Safety Glasses", "beardnet": "Beard Net",
+            "hardhat": "Hard Hat", "glasses": "Safety Glasses", "vest": "Hi-Vis Vest",
             "earplugs": "Ear Plugs", "gloves": "Gloves"
         }
         self.ppe_keys = list(self.item_names.keys())
@@ -366,12 +369,12 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
         main_layout = QHBoxLayout(central_widget)
-        main_layout.setSpacing(30)
-        main_layout.setContentsMargins(30, 30, 30, 30)
+        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(20, 20, 20, 20)
 
         self.stacked_widget = QWidget()
         self.main_stacked_layout = QHBoxLayout(self.stacked_widget)
-        self.main_stacked_layout.setSpacing(30)
+        self.main_stacked_layout.setSpacing(20)
         self.main_stacked_layout.setContentsMargins(0, 0, 0, 0)
 
         # Create pages
@@ -405,7 +408,7 @@ class MainWindow(QMainWindow):
         """Creates the main content widget holding header, status, camera/buttons."""
         main_content = QWidget()
         layout = QVBoxLayout(main_content)
-        layout.setSpacing(20)
+        layout.setSpacing(15)
         layout.setContentsMargins(0, 0, 0, 0)
 
         layout.addLayout(self._create_header())
@@ -417,20 +420,20 @@ class MainWindow(QMainWindow):
     def _create_header(self):
         """Creates the header layout with Help, Title, Settings buttons."""
         layout = QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 20)
+        layout.setContentsMargins(0, 0, 0, 15)
 
         self.help_button = QPushButton("Help")
-        self.help_button.setFixedSize(120, 50)
+        self.help_button.setFixedSize(100, 40)
         self.help_button.setStyleSheet(self._get_button_style_nav())
         self.help_button.clicked.connect(self.toggle_help)
 
         self.title = QLabel("PPE Vending Machine")
-        self.title.setFont(QFont('Arial', 32, QFont.Bold))
+        self.title.setFont(QFont('Arial', 28, QFont.Bold))
         self.title.setAlignment(Qt.AlignCenter)
         self.title.setStyleSheet(f"color: {self.secondary_color};") # Initializing color
 
         self.settings_button = QPushButton("Settings")
-        self.settings_button.setFixedSize(120, 50)
+        self.settings_button.setFixedSize(100, 40)
         self.settings_button.setStyleSheet(self._get_button_style_nav())
         self.settings_button.clicked.connect(self.toggle_settings)
 
@@ -445,17 +448,17 @@ class MainWindow(QMainWindow):
         """Creates the status frame containing gate and dispensing labels."""
         frame = QFrame()
         frame.setFrameStyle(QFrame.StyledPanel | QFrame.Raised)
-        frame.setStyleSheet("QFrame { background-color: white; border-radius: 15px; padding: 10px; }")
+        frame.setStyleSheet("QFrame { background-color: white; border-radius: 12px; padding: 8px; }")
         layout = QHBoxLayout(frame)
-        layout.setContentsMargins(20, 15, 20, 15)
+        layout.setContentsMargins(15, 10, 15, 10)
 
         self.gate_status = QLabel("Gate LOCKED")
-        self.gate_status.setFont(QFont('Arial', 18, QFont.Bold))
+        self.gate_status.setFont(QFont('Arial', 16, QFont.Bold))
         self._set_gate_style_locked()
 
         self.dispensing_status = QLabel("Ready to dispense...")
-        self.dispensing_status.setFont(QFont('Arial', 18))
-        self.dispensing_status.setStyleSheet("QLabel { color: #8E8E93; padding: 10px; background-color: #F8F9FA; border-radius: 10px; }")
+        self.dispensing_status.setFont(QFont('Arial', 16))
+        self.dispensing_status.setStyleSheet("QLabel { color: #8E8E93; padding: 8px; background-color: #F8F9FA; border-radius: 8px; }")
 
         layout.addWidget(self.gate_status)
         layout.addStretch(1)
@@ -465,11 +468,11 @@ class MainWindow(QMainWindow):
     def _create_camera_button_section(self):
         """Creates the horizontal layout for camera feed and button grid."""
         layout = QHBoxLayout()
-        layout.setSpacing(30)
+        layout.setSpacing(20)
 
         self.camera_feed = QLabel("Camera Feed")
         self.camera_feed.setMinimumSize(CAMERA_FEED_WIDTH, CAMERA_FEED_HEIGHT)
-        self.camera_feed.setStyleSheet("QLabel { border: 3px solid #E1E1E1; background-color: #2C3E50; border-radius: 15px; padding: 5px; color: white; }")
+        self.camera_feed.setStyleSheet("QLabel { border: 2px solid #E1E1E1; background-color: #2C3E50; border-radius: 12px; padding: 4px; color: white; }")
         self.camera_feed.setAlignment(Qt.AlignCenter)
 
         button_grid_widget = self._create_button_grid()
@@ -483,14 +486,14 @@ class MainWindow(QMainWindow):
         container = QWidget()
         container_layout = QVBoxLayout(container)
         grid_layout = QGridLayout()
-        grid_layout.setSpacing(20)
+        grid_layout.setSpacing(15)
 
         buttons_config = [
-            ("Hard Hat\n(8A1)", "hardhat", 0, 0),
-            ("Beard Net\n(8A3)", "beardnet", 0, 1),
-            ("Gloves\n(8A5)", "gloves", 1, 0),
-            ("Safety\nGlasses (8A2)", "glasses", 1, 1),
-            ("Ear Plugs\n(8A4)", "earplugs", 2, 0),
+            ("Hard Hat", "hardhat", 0, 0),
+            ("Hi-Vis Vest", "vest", 0, 1),
+            ("Gloves", "gloves", 1, 0),
+            ("Safety Glasses", "glasses", 1, 1),
+            ("Ear Plugs", "earplugs", 2, 0),
             ("OVERRIDE", "override", 2, 1)
         ]
 
@@ -518,15 +521,15 @@ class MainWindow(QMainWindow):
         """Creates the settings page widget."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setSpacing(20)
+        layout.setSpacing(15)
 
         title = QLabel("Settings")
-        title.setFont(QFont('Arial', 24, QFont.Bold))
+        title.setFont(QFont('Arial', 20, QFont.Bold))
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("QLabel { color: #2C3E50; padding: 20px; }")
+        title.setStyleSheet("QLabel { color: #2C3E50; padding: 15px; }")
 
         form_container = QFrame()
-        form_container.setStyleSheet("QFrame { background-color: #F8F9FA; border-radius: 15px; padding: 20px; } QLabel { color: #2C3E50; font-size: 16px; font-weight: bold; }")
+        form_container.setStyleSheet("QFrame { background-color: #F8F9FA; border-radius: 12px; padding: 15px; } QLabel { color: #2C3E50; font-size: 14px; font-weight: bold; }")
         form_layout = QVBoxLayout(form_container)
 
         # --- AVend Settings ---
@@ -534,24 +537,24 @@ class MainWindow(QMainWindow):
         avend_layout = QVBoxLayout(avend_group_box)
         avend_layout.setContentsMargins(0, 0, 0, 0)
         avend_title = QLabel("AVend Connection")
-        avend_title.setStyleSheet("font-weight: bold; font-size: 18px; margin-bottom: 10px;")
+        avend_title.setStyleSheet("font-weight: bold; font-size: 16px; margin-bottom: 8px;")
         avend_layout.addWidget(avend_title)
 
         ip_port_widget = QWidget()
         ip_port_row_layout = QHBoxLayout(ip_port_widget)
         ip_port_row_layout.setContentsMargins(0,0,0,0)
-        ip_port_row_layout.setSpacing(10)
+        ip_port_row_layout.setSpacing(8)
 
         ip_label = QLabel("AVend IP:")
         self.avend_ip_input = QLineEdit(DEFAULT_AVEND_IP)
         self.avend_ip_input.setPlaceholderText("IP address")
-        self.avend_ip_input.setStyleSheet("QLineEdit { padding: 12px; border: 2px solid #E1E1E1; border-radius: 8px; font-size: 16px; background-color: white; color: #2C3E50; } QLineEdit:focus { border-color: #007AFF; }")
+        self.avend_ip_input.setStyleSheet("QLineEdit { padding: 10px; border: 1px solid #E1E1E1; border-radius: 6px; font-size: 14px; background-color: white; color: #2C3E50; } QLineEdit:focus { border-color: #007AFF; }")
 
         port_label = QLabel("Port:")
         self.avend_port_input = QLineEdit(DEFAULT_AVEND_PORT)
         self.avend_port_input.setPlaceholderText("Port")
-        self.avend_port_input.setFixedWidth(80)
-        self.avend_port_input.setStyleSheet("QLineEdit { padding: 12px; border: 2px solid #E1E1E1; border-radius: 8px; font-size: 16px; background-color: white; color: #2C3E50; } QLineEdit:focus { border-color: #007AFF; }")
+        self.avend_port_input.setFixedWidth(70)
+        self.avend_port_input.setStyleSheet("QLineEdit { padding: 10px; border: 1px solid #E1E1E1; border-radius: 6px; font-size: 14px; background-color: white; color: #2C3E50; } QLineEdit:focus { border-color: #007AFF; }")
 
         ip_port_row_layout.addWidget(ip_label)
         ip_port_row_layout.addWidget(self.avend_ip_input)
@@ -562,34 +565,34 @@ class MainWindow(QMainWindow):
         # --- ESP32 Settings ---
         esp32_group_box = QFrame()
         esp32_layout = QVBoxLayout(esp32_group_box)
-        esp32_layout.setContentsMargins(0, 15, 0, 0) # Add top margin
+        esp32_layout.setContentsMargins(0, 10, 0, 0)
         esp32_title = QLabel("Gate Controller (ESP32)")
-        esp32_title.setStyleSheet("font-weight: bold; font-size: 18px; margin-bottom: 10px;")
+        esp32_title.setStyleSheet("font-weight: bold; font-size: 16px; margin-bottom: 8px;")
         esp32_layout.addWidget(esp32_title)
 
         esp32_port_widget = QWidget()
         esp32_port_layout = QHBoxLayout(esp32_port_widget)
         esp32_port_layout.setContentsMargins(0, 0, 0, 0)
-        esp32_port_layout.setSpacing(10)
+        esp32_port_layout.setSpacing(8)
 
         esp32_label = QLabel("COM Port:")
         self.esp32_port_input = QLineEdit()
         self.esp32_port_input.setPlaceholderText("e.g., COM3 or /dev/rfcomm0")
-        self.esp32_port_input.setStyleSheet("QLineEdit { padding: 12px; border: 2px solid #E1E1E1; border-radius: 8px; font-size: 16px; background-color: white; color: #2C3E50; } QLineEdit:focus { border-color: #007AFF; }")
+        self.esp32_port_input.setStyleSheet("QLineEdit { padding: 10px; border: 1px solid #E1E1E1; border-radius: 6px; font-size: 14px; background-color: white; color: #2C3E50; } QLineEdit:focus { border-color: #007AFF; }")
 
         esp32_port_layout.addWidget(esp32_label)
-        esp32_port_layout.addWidget(self.esp32_port_input, 1) # Give it stretch factor
+        esp32_port_layout.addWidget(self.esp32_port_input, 1)
         esp32_layout.addWidget(esp32_port_widget)
 
         # Add widgets to form container
         form_layout.addWidget(avend_group_box)
         form_layout.addWidget(esp32_group_box)
-        form_layout.addSpacing(20)
+        form_layout.addSpacing(15)
 
         # Save Button
         self.save_settings_btn = QPushButton("Save Settings")
-        self.save_settings_btn.setStyleSheet(self._get_button_style_nav()) # Use nav style
-        self.save_settings_btn.setMinimumWidth(150)
+        self.save_settings_btn.setStyleSheet(self._get_button_style_nav())
+        self.save_settings_btn.setMinimumWidth(130)
         self.save_settings_btn.clicked.connect(self.save_settings)
         form_layout.addWidget(self.save_settings_btn, alignment=Qt.AlignCenter)
 
@@ -603,19 +606,19 @@ class MainWindow(QMainWindow):
         """Creates the help page widget."""
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        layout.setSpacing(15)
-        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(12)
+        layout.setContentsMargins(20, 20, 20, 20)
 
         title = QLabel("Help")
-        title.setFont(QFont('Arial', 24, QFont.Bold))
+        title.setFont(QFont('Arial', 20, QFont.Bold))
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("QLabel { color: #2C3E50; padding: 5px; }")
+        title.setStyleSheet("QLabel { color: #2C3E50; padding: 3px; }")
 
         text_edit = QTextEdit()
         text_edit.setReadOnly(True)
-        text_edit.setFont(QFont('Arial', 14))
+        text_edit.setFont(QFont('Arial', 12))
         text_edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        text_edit.setStyleSheet("QTextEdit { background-color: white; border-radius: 15px; padding: 10px 5px; color: #2C3E50; }")
+        text_edit.setStyleSheet("QTextEdit { background-color: white; border-radius: 12px; padding: 8px 5px; color: #2C3E50; }")
         help_content = """
             PPE Detection:
             • The AI detects required PPE using the camera.
@@ -635,15 +638,15 @@ class MainWindow(QMainWindow):
         # Back button
         button_container = QWidget()
         button_layout = QVBoxLayout(button_container)
-        button_layout.setContentsMargins(0, 15, 0, 0)
+        button_layout.setContentsMargins(0, 10, 0, 0)
         back_button = QPushButton("Back to Main Screen")
-        back_button.setFixedSize(200, 50)
-        back_button.setStyleSheet(self._get_button_style_nav()) # Use nav style
+        back_button.setFixedSize(180, 40)
+        back_button.setStyleSheet(self._get_button_style_nav())
         back_button.clicked.connect(self.toggle_help)
         button_layout.addWidget(back_button, 0, Qt.AlignCenter)
 
         layout.addWidget(title, 0)
-        layout.addWidget(text_edit, 1) # Stretch factor 1
+        layout.addWidget(text_edit, 1)
         layout.addWidget(button_container, 0)
         return widget
 
@@ -680,23 +683,23 @@ class MainWindow(QMainWindow):
         return f"""
             QPushButton {{
                 background-color: {bg}; color: white;
-                border-radius: 15px; font-size: 16px; font-weight: bold;
-                border: none; padding: 10px; margin: 2px;
+                border-radius: 10px; font-size: 16px; font-weight: bold;
+                border: none; padding: 10px; margin: 3px;
             }}
-            QPushButton:hover {{ background-color: {hover}; padding: 8px; margin: 4px; }}
-            QPushButton:pressed {{ background-color: {pressed}; padding: 10px; margin: 2px; }}
+            QPushButton:hover {{ background-color: {hover}; padding: 8px; margin: 5px; }}
+            QPushButton:pressed {{ background-color: {pressed}; padding: 10px; margin: 3px; }}
         """
 
     def _set_gate_style_locked(self):
         """Sets the gate status label style to LOCKED."""
         self.gate_status.setStyleSheet(f"""
-            QLabel {{ color: {self.danger_color}; background-color: #FFE5E5; padding: 10px; border-radius: 10px; font-weight: bold; }}
+            QLabel {{ color: {self.danger_color}; background-color: #FFE5E5; padding: 8px; border-radius: 8px; font-weight: bold; }}
         """)
 
     def _set_gate_style_unlocked(self):
         """Sets the gate status label style to UNLOCKED (or Override)."""
         self.gate_status.setStyleSheet(f"""
-            QLabel {{ color: white; background-color: {self.success_color}; padding: 10px; border-radius: 10px; font-weight: bold; }}
+            QLabel {{ color: white; background-color: {self.success_color}; padding: 8px; border-radius: 8px; font-weight: bold; }}
         """)
 
     # === Threading ===
@@ -886,7 +889,7 @@ class MainWindow(QMainWindow):
                      painter = QPainter(pixmap)
                      pen = QPen(Qt.green, 2)
                      painter.setPen(pen)
-                     painter.setFont(QFont('Arial', 10))
+                     painter.setFont(QFont('Arial', 8))
 
                      for box_data in self.latest_received_boxes:
                           try:
@@ -1027,7 +1030,7 @@ class MainWindow(QMainWindow):
         """Resets the dispensing status label to default, avoiding override."""
         if not self.override_active:
              self.dispensing_status.setText("Ready to dispense...")
-             self.dispensing_status.setStyleSheet("QLabel { color: #8E8E93; padding: 10px; background-color: #F8F9FA; border-radius: 10px; }")
+             self.dispensing_status.setStyleSheet("QLabel { color: #8E8E93; padding: 8px; background-color: #F8F9FA; border-radius: 8px; }")
 
     def toggle_help(self):
         """Shows/Hides the Help page and updates nav button styles."""
