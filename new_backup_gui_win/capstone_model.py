@@ -130,27 +130,45 @@ def try_open_camera(cam_index, max_retries=5, retry_delay=2.0):
         capture_method = cv2.CAP_DSHOW
     else:
         capture_method = cv2.CAP_V4L2
-        
+        # Construct GStreamer pipeline for Jetson-like environments
+        gst_pipeline_format = (
+            "nvv4l2camerasrc device=/dev/video{index} ! "
+            "video/x-raw(memory:NVMM), format=UYVY, width=3840, height=2160 ! "
+            "nvvidconv ! "
+            "video/x-raw, format=BGRx, width={width}, height={height} ! " # Use configured dimensions
+            "videoconvert ! "
+            "video/x-raw, format=BGR ! appsink drop=true sync=false"
+        )
+        gst_pipeline = gst_pipeline_format.format(index=cam_index, width=FRAME_WIDTH, height=FRAME_HEIGHT)
+
+
     for attempt in range(max_retries):
         try:
             print(f"\nAttempt {attempt + 1}/{max_retries}...")
             
+            cap = None # Initialize cap to None
             if platform.system() == "Windows":
                 cap = cv2.VideoCapture(cam_index, capture_method)
             else:
-                # For Linux, try the specific device path first if found
-                if device_path:
-                    print(f"Trying specific device path: {device_path}")
-                    cap = cv2.VideoCapture(device_path, capture_method)
-                
-                # If path failed or wasn't found, try the index with V4L2
-                if not device_path or not cap.isOpened():
-                    print(f"Trying index {cam_index} with V4L2 backend...")
-                    cap = cv2.VideoCapture(cam_index, capture_method)
-                
-                # If V4L2 failed, try the index with the default backend
-                if not cap.isOpened():
-                    print("V4L2 failed, trying index {cam_index} with default backend...")
+                # 1. Try GStreamer pipeline first
+                print(f"Trying GStreamer pipeline: {gst_pipeline}")
+                cap = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
+
+                # 2. If GStreamer fails, try the specific device path with V4L2
+                if not cap or not cap.isOpened():
+                    print("GStreamer failed.")
+                    if device_path:
+                        print(f"Trying specific device path with V4L2: {device_path}")
+                        cap = cv2.VideoCapture(device_path, capture_method)
+
+                # 3. If specific path failed or wasn't found, try the index with V4L2
+                if not cap or not cap.isOpened():
+                     print(f"Trying index {cam_index} with V4L2 backend...")
+                     cap = cv2.VideoCapture(cam_index, capture_method)
+
+                # 4. If V4L2 failed, try the index with the default backend
+                if not cap or not cap.isOpened():
+                    print(f"V4L2 failed, trying index {cam_index} with default backend...")
                     cap = cv2.VideoCapture(cam_index)
             
             # Give the camera more time to initialize
