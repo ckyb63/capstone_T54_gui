@@ -83,6 +83,7 @@ class DetectionThread(QThread):
         self.model = None
         self.cap = None
         self.lock = threading.Lock()
+        self.current_camera_index = None # Added to store the working index
         # Initial state assumes nothing detected
         self.latest_states = {
             "hardhat": False, "glasses": False, "vest": False,
@@ -183,25 +184,33 @@ class DetectionThread(QThread):
 
             # Open Camera
             self.cap = None
+            self.current_camera_index = None # Reset index before trying
             if platform.system() != "Windows":
                 preferred_indices = [1, 2, 0]
                 for index in preferred_indices:
                     print(f"\n--- Trying camera index {index} (Linux) ---")
                     self.cap = try_open_camera(index, max_retries=2, retry_delay=1.5)
-                    if self.cap: break
+                    if self.cap:
+                        self.current_camera_index = index # Store successful index
+                        break
             else:
                 print("\n--- Trying external camera (index 1 - Windows) ---")
                 self.cap = try_open_camera(1, max_retries=3, retry_delay=1.5)
-                if not self.cap:
+                if self.cap:
+                    self.current_camera_index = 1 # Store successful index
+                else:
                     print("\n--- External camera failed, trying built-in camera (index 0 - Windows) ---")
                     self.cap = try_open_camera(0, max_retries=2, retry_delay=1.0)
+                    if self.cap:
+                        self.current_camera_index = 0 # Store successful index
 
             if not self.cap or not self.cap.isOpened():
                 print("FATAL: Failed to initialize ANY camera in DetectionThread.")
                 self.camera_status_signal.emit(False)
                 return
+            # If we got here, self.current_camera_index should hold the working index
 
-            print("\nCamera setup complete. Starting detection loop...")
+            print(f"\nCamera setup complete using index {self.current_camera_index}. Starting detection loop...")
             self.camera_status_signal.emit(True)
 
             frame_count = 0
@@ -270,6 +279,24 @@ class DetectionThread(QThread):
                     actual_read_fps = read_frame_count / (current_time - read_fps_start_time)
                     with self.lock: pred_running_status = self.prediction_running
                     print(f"Stats (5s avg): Loop FPS: {loop_fps:.2f}, Read FPS: {actual_read_fps:.2f}, Last read: {read_time:.4f}s, Predicting: {pred_running_status}")
+
+                    # --- Check Read FPS and attempt restart if low ---
+                    if actual_read_fps < 5.0 and self.current_camera_index is not None:
+                        print(f"WARNING: Read FPS ({actual_read_fps:.2f}) below threshold (5 FPS). Attempting camera restart on index {self.current_camera_index}...")
+                        if self.cap:
+                            self.cap.release()
+                            self.cap = None
+                        time.sleep(1.0) # Give some time before retrying
+                        self.cap = try_open_camera(self.current_camera_index, max_retries=2, retry_delay=1.0)
+                        if self.cap:
+                            print(f"Camera successfully restarted on index {self.current_camera_index}.")
+                            self.camera_status_signal.emit(True) # Re-signal connection
+                        else:
+                            print(f"FATAL: Failed to restart camera on index {self.current_camera_index}. Stopping detection loop.")
+                            self.is_running = False # Stop the thread if restart fails
+                            self.camera_status_signal.emit(False)
+
+                    # Reset FPS counters and timers
                     fps_frame_count = 0
                     read_frame_count = 0
                     fps_start_time = current_time
