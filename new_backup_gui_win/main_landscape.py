@@ -60,7 +60,7 @@ MISS_THRESHOLD = 50 # Consecutive misses before button turns red
 OVERRIDE_DURATION_MS = 15000 # 15 seconds
 STATUS_RESET_DELAY_MS = 3000 # 3 seconds
 H1_SERVICE_DELAY_MS = 3000 # 3 seconds
-version = "0.10.0"
+version = "0.11.0"
 
 # === Detection Thread ===
 class DetectionThread(QThread):
@@ -352,7 +352,16 @@ class MainWindow(QMainWindow):
         self.is_settings_visible = False
         self.is_help_visible = False
         self.first_dispense_done = False
-        self.esp32_port_name = None # COM port name for ESP32
+
+        # --- Determine Default ESP32 Port based on OS ---
+        if platform.system() == "Windows":
+            self.esp32_port_name = "COM9"
+        elif platform.system() == "Linux":
+            self.esp32_port_name = "/dev/ttyUSB0"
+        else:
+            self.esp32_port_name = None # Or some other default/fallback
+        print(f"Default ESP32 Port for {platform.system()}: {self.esp32_port_name}")
+
         self.esp32_serial = None    # Serial connection object
 
         # --- Window Setup ---
@@ -399,8 +408,8 @@ class MainWindow(QMainWindow):
         # --- Detection Thread --- #
         self._start_detection_thread()
 
-        # Attempt initial ESP32 connection (will use saved/default port if available later)
-        # self._connect_to_esp32() # We'll call this after settings are loaded/saved initially
+        # Attempt initial ESP32 connection using the default port
+        self._connect_to_esp32()
 
     # === Helper Methods for UI Creation ===
 
@@ -577,7 +586,11 @@ class MainWindow(QMainWindow):
 
         esp32_label = QLabel("COM Port:")
         self.esp32_port_input = QLineEdit()
-        self.esp32_port_input.setPlaceholderText("e.g., COM3 or /dev/rfcomm0")
+        # Set initial text based on the determined default port
+        if self.esp32_port_name:
+            self.esp32_port_input.setText(self.esp32_port_name)
+        else:
+            self.esp32_port_input.setPlaceholderText("e.g., COM3 or /dev/ttyUSB0")
         self.esp32_port_input.setStyleSheet("QLineEdit { padding: 10px; border: 1px solid #E1E1E1; border-radius: 6px; font-size: 14px; background-color: white; color: #2C3E50; } QLineEdit:focus { border-color: #007AFF; }")
 
         esp32_port_layout.addWidget(esp32_label)
