@@ -14,7 +14,7 @@ import torch
 # Load the trained model
 # Make sure the model path is correct for your environment
 # Consider making this path configurable or relative
-MODEL_PATH = r'C:\Users\maxch\Documents\Purdue Files\2024 Fall\ENGT 480\GitHub\capstone_T54_gui\new_backup_gui_win\14_Apr.pt'
+MODEL_PATH = r'C:\Users\maxch\Documents\Purdue Files\2024 Fall\ENGT 480\GitHub\capstone_T54_gui\new_backup_gui_win\final.pt'
 try:
     model = YOLO(MODEL_PATH)
     print(f"Successfully loaded YOLO model from: {MODEL_PATH}")

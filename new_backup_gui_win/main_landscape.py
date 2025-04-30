@@ -349,11 +349,11 @@ class MainWindow(QMainWindow):
         # --- Core Attributes ---
         self.api = AvendAPI(host=DEFAULT_AVEND_IP, port=DEFAULT_AVEND_PORT)
         self.avend_codes = {
-            "hardhat": "8A1", 
-            "glasses": "8A2", 
-            "vest": "8A3",
-            "earplugs": "8A4",
-            "gloves": "8A5"
+            "hardhat": "8D1", 
+            "glasses": "8C2", 
+            "vest": "8A4",
+            "earplugs": "8E7",
+            "gloves": "8B3"
         }
         self.item_names = {
             "hardhat": "Hard Hat", "glasses": "Safety Glasses", "vest": "Hi-Vis Vest",
