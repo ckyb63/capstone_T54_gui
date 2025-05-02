@@ -1,7 +1,7 @@
 """
 Python Client for the AVend Local Dispense API
 Implements AVend Local Dispense API Guide v1.2.2
-Max Chen - v0.3.2
+Max Chen
 """
 
 import requests

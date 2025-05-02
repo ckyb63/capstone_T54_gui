@@ -10,11 +10,13 @@ import platform
 import subprocess
 import re
 import torch
+from dotenv import load_dotenv
+import os
 
 # Load the trained model
-# Make sure the model path is correct for your environment
-# Consider making this path configurable or relative
-MODEL_PATH = r'C:\Users\maxch\Documents\Purdue Files\2024 Fall\ENGT 480\GitHub\capstone_T54_gui\new_backup_gui_win\final.pt'
+load_dotenv()
+MODEL_PATH = os.getenv('MODEL_PATH')
+
 try:
     model = YOLO(MODEL_PATH)
     print(f"Successfully loaded YOLO model from: {MODEL_PATH}")
@@ -31,8 +33,8 @@ except Exception as e:
 # Mapping of model class names to GUI button keys
 CLASS_TO_BUTTON_MAP = {
     'helmet': 'hardhat',
-    'glasses': 'glasses',  # This maps the model's 'glasses' class to the GUI's 'glasses' button
-    'safety glasses': 'glasses',  # This also maps 'safety glasses' class to the same button
+    'glasses': 'glasses',
+    'safety glasses': 'glasses',
     'safety_goggles': 'glasses',
     'beardnet': 'beardnet',
     'earplugs': 'earplugs',
@@ -40,15 +42,11 @@ CLASS_TO_BUTTON_MAP = {
     'vest' : 'vest'
 }
 
-# Global variable to store detection results - Will be moved into DetectionThread
-# latest_detection_results = None 
-# last_annotated_frame = None
-
 # Constants for optimization
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
-DETECTION_INTERVAL = 5  # Only run detection every N frames (Increased from 5)
-DISPLAY_FPS = 60 # Target FPS for camera reads/display attempts
+DETECTION_INTERVAL = 5
+DISPLAY_FPS = 60
 
 def print_camera_info(cap, camera_index):
     """Print detailed information about the camera"""
@@ -275,9 +273,6 @@ def try_open_camera(cam_index, max_retries=5, retry_delay=2.0):
     
     print(f"All attempts to open camera {cam_index} failed.")
     return None
-
-# !!! Removed the _detection_worker function from here !!!
-# It will become a method within the DetectionThread class in main_landscape.py
 
 # --- Main Entry Point --- 
 # This function now just returns the necessary constants/model

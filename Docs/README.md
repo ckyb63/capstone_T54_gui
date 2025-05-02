@@ -1,15 +1,15 @@
-# Windows version of PPE GUI with AVEND API Focus
+# The AI PPE Vending Machine
 
-[![Latest Version](https://img.shields.io/badge/Log-v0.10.0-blue.svg)](CHANGELOG.md)
-[![Python Version](https://img.shields.io/badge/Python-3.8-blue.svg?logo=python&logoColor=white)](https://www.python.org/downloads/release/python-3811/)
-![Status](https://img.shields.io/badge/Status-Active-darkgreen.svg)
+[![Latest Version](https://img.shields.io/badge/Log-v0.12.0-blue.svg)](CHANGELOG.md)
+[![Python Version](https://img.shields.io/badge/Python-3.10.11-blue.svg?logo=python&logoColor=white)](https://www.python.org/downloads/release/python-31011/)
+[![PySide6 Version](https://img.shields.io/badge/PySide6-6.9.0-blue.svg?logo=pyside&logoColor=white)](https://pypi.org/project/PySide6/)
+![Status](https://img.shields.io/badge/Status-Finished-darkgray.svg)
 
 ## Overview
 
-This is the backup plan, where it is a simple Qt Application that is connected with a USB webcam to detect and display the PPE detection status. While there are also Avend Mock Server to work with the Avend Client GUI for testing if the dispensing is working.
+This is the repository for the 25-26 Purdue Polytechnic Senior Capstone project, the AI PPE Vending Machine. The repository contains the following main parts:
 
-## Key interest
-
-- [Avend API](/avend_api_client/avend_api.py)
-- [Avend Client GUI](/avend_api_client/avend_gui.py)
-- [Avend Mock Server](/avend_mock_server/Avend_Server_Mock.py)
+- [Avend API](/avend_api_client/README.md)
+- [Avend Mock Server](/avend_mock_server/README.md)
+- PySide6 GUI
+- [Safety Gate Controller](/ESP32_Bluetooth_Comms/)

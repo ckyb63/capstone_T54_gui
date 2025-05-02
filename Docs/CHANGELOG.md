@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.12.0] - 2025-May-01 - The Tech Expo
+
+- Overall repository cleanup including renaming and reorganizing files, also updated all avaliable documentation.
+
 ## [0.10.0] - 2025-April-23
 
 - Among other changes, added ESP32 support in the GUI.

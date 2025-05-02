@@ -2,38 +2,20 @@
 
 A PySide6-based GUI application for interacting with the AVend Local Dispense API.
 
-## Features
-
-- Connect to AVend middleware with configurable host and port
-- Start vending sessions
-- Single-item dispensing
-- Multi-item cart functionality (add, remove, clear, dispense)
-- Quick dispense buttons for common selections
-- Response logging
-
 ## Requirements
 
-- Python 3.6+
 - PySide6 (6.9.0)
 - Requests
 
-## Installation
-
-1. Install the required dependencies:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
 ## Usage
 
-1. Run the GUI application:
+1. Run the test GUI application:
 
    ```bash
-   python avend_gui.py
+   python avend_test_vend_gui.py
    ```
 
-2. Configure the connection settings (default: 127.0.0.1:8080)
+2. Configure the connection settings (default: 127.0.0.1:8080 which is local host)
 3. Click "Connect" to initialize the API client
 4. Start a session before performing any dispense operations
 5. Use the various controls to interact with the vending machine:
@@ -57,3 +39,4 @@ The `AvendAPI` class provides a Python interface to the AVend Local Dispense API
 - A session must be started before any dispense operations
 - Sessions timeout after 5 minutes of inactivity
 - For special characters like * or #, the API handles URL encoding automatically
+- A new cookie is generated for each start session and is only useed for that one dispense.
