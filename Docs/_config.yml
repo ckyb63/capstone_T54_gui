@@ -1,8 +1,8 @@
 theme: jekyll-theme-cayman
 title: PPE A.I. Vending Machine
 description: Team 54 - Purdue Polytechnic Senior Capstone Project
-baseurl: "/capstone_T54_gui"
-url: ""
+baseurl: ""
+url: "https://ckyb63.github.io/capstone_T54_gui"
 show_downloads: true
 github:
   repository_url: https://github.com/ckyb63/capstone_T54_gui 
