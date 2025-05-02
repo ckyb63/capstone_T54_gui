@@ -38,7 +38,7 @@ except ImportError:
         def stop_service_routine(self): return {"success": True, "response": "Mock H1 stop"}
 
 try:
-    from capstone_model import run_detection, try_open_camera, get_linux_cameras, print_camera_info
+    from vending_gui.camera_opener import run_detection, try_open_camera, get_linux_cameras, print_camera_info
     HAS_DETECTION_MODEL = True
 except ImportError as e:
     print(f"WARNING: Failed to import from capstone_model: {e}. Using mock detection.")
@@ -49,7 +49,7 @@ except ImportError as e:
     def print_camera_info(cap, idx): pass
 
 # === Constants ===
-DEFAULT_AVEND_IP = "192.168.0.3"
+DEFAULT_AVEND_IP = "192.168.0.3" # This is the Static IP assigned to the Avend Kit One
 DEFAULT_AVEND_PORT = "8080"
 CAMERA_FEED_WIDTH = 400
 CAMERA_FEED_HEIGHT = 300
@@ -57,10 +57,10 @@ DETECTION_RESOLUTION = (640, 480) # Resolution used during model detection
 BUTTON_WIDTH = 150
 BUTTON_HEIGHT = 90
 MISS_THRESHOLD = 50 # Consecutive misses before button turns red
-OVERRIDE_DURATION_MS = 15000 # 15 seconds
-STATUS_RESET_DELAY_MS = 3000 # 3 seconds
-H1_SERVICE_DELAY_MS = 3000 # 3 seconds
-version = "0.11.0"
+OVERRIDE_DURATION_MS = 15000 
+STATUS_RESET_DELAY_MS = 3000
+H1_SERVICE_DELAY_MS = 3000
+version = "0.25.0" # Internal version at final tech expo May 1 2025 following previous development seen in ROS2 GUI Package
 
 # === Detection Thread ===
 class DetectionThread(QThread):
@@ -367,8 +367,8 @@ class MainWindow(QMainWindow):
         self.success_color = "#34C759" # Green (detected, success)
         self.danger_color = "#FF3B30" # Red (missing, error)
         self.nav_color = "#007AFF" # Blue (nav buttons)
-        self.nav_hover_color = "#0062CC"
-        self.nav_pressed_color = "#004999"
+        self.nav_hover_color = "#0062CC" # Blue (nav buttons)
+        self.nav_pressed_color = "#004999" # Blue (nav buttons)
         self.nav_active_color = self.success_color # Green when nav active
 
         # --- State Tracking --- #
@@ -399,7 +399,6 @@ class MainWindow(QMainWindow):
         self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowSystemMenuHint |
                           Qt.WindowMinimizeButtonHint | Qt.WindowMaximizeButtonHint |
                           Qt.WindowCloseButtonHint)
-        # Centering is best handled by the OS or showMaximized()
 
         # --- UI Construction --- #
         central_widget = QWidget()
@@ -804,34 +803,19 @@ class MainWindow(QMainWindow):
         """Sends a command string to the connected ESP32."""
         if not self.esp32_serial or not self.esp32_serial.is_open:
             print(f"ESP32 not connected. Cannot send command: '{command}'")
-            # Attempt to reconnect?
-            # if not self._connect_to_esp32():
-            #     QMessageBox.warning(self, "ESP32 Error", "Cannot send command: ESP32 is not connected.")
-            #     return
-            # else: # Reconnect successful, try sending again
-            #      pass # Continue to send below
-            return # For now, just return if not connected
+            return
 
         try:
             command_bytes = f"{command}\n".encode('utf-8')
             print(f"Sending to ESP32: {command_bytes.decode().strip()}")
             self.esp32_serial.write(command_bytes)
-            self.esp32_serial.flush() # Ensure data is sent
-            # Optionally read response? The ESP32 sends back confirmations.
-            # response = self.esp32_serial.readline().decode('utf-8').strip()
-            # if response:
-            #     print(f"ESP32 Response: {response}")
-            # else:
-            #     print("ESP32: No response within timeout.")
+            self.esp32_serial.flush()
         except serial.SerialTimeoutException:
             print(f"ERROR sending '{command}' to ESP32: Write timeout.")
             QMessageBox.warning(self, "ESP32 Communication Error", "Write timed out while sending command to ESP32.")
         except serial.SerialException as e:
             print(f"ERROR sending '{command}' to ESP32: {e}")
             QMessageBox.warning(self, "ESP32 Communication Error", f"Serial error sending command to ESP32: {e}")
-            # Consider closing the port on error
-            # self.esp32_serial.close()
-            # self.esp32_serial = None
         except Exception as e:
             print(f"Unexpected ERROR sending '{command}' to ESP32: {e}")
             QMessageBox.critical(self, "ESP32 Error", f"An unexpected error occurred sending command to ESP32: {e}")
@@ -875,7 +859,7 @@ class MainWindow(QMainWindow):
         """Updates the main title color based on camera connection status."""
         print(f"\nCamera Status Update: {is_connected}")
         text_to_set = "Camera Feed"
-        color_to_set = self.secondary_color # Default/Warning color
+        color_to_set = self.secondary_color
 
         if is_connected is None:
             text_to_set = "Initializing camera..."
@@ -955,7 +939,6 @@ class MainWindow(QMainWindow):
                       print("Warning: Invalid detection_resolution for scaling boxes.")
 
             # --- Display Pixmap --- #
-            # Ensure background is set correctly if label was showing text
             if self.camera_feed.text():
                 self.camera_feed.setStyleSheet("QLabel { background-color: black; border-radius: 15px; }")
                 self.camera_feed.setText("")
@@ -981,10 +964,10 @@ class MainWindow(QMainWindow):
         if self.override_active: return
 
         print("OVERRIDE ACTIVATED")
-        self._send_to_esp32("unlock") # <<< Send unlock command to ESP32
+        self._send_to_esp32("unlock")
 
         self.override_active = True
-        self.override_seconds_left = OVERRIDE_DURATION_MS // 1000 # Use constant
+        self.override_seconds_left = OVERRIDE_DURATION_MS // 1000
 
         # Set buttons green
         green_style = self._get_button_style(self.success_color, "#2CB14F", "#248F3F")
@@ -1011,7 +994,7 @@ class MainWindow(QMainWindow):
     def reset_override_state(self):
         """Resets the UI and state after the override period ends."""
         print("Resetting override state...")
-        self._send_to_esp32("lock") # <<< Send lock command to ESP32
+        self._send_to_esp32("lock")
 
         self.override_active = False
         self.gate_status.setText("Gate LOCKED")
@@ -1034,9 +1017,6 @@ class MainWindow(QMainWindow):
 
         dispense_response = self.api.dispense(code=code)
         if dispense_response.get("success", False):
-            # Don't show success message here - was removed by user
-            # self.dispensing_status.setText(f"Successfully dispensed {code}")
-            # self.dispensing_status.setStyleSheet(f"color: {self.success_color};")
 
             if not self.first_dispense_done:
                 self.first_dispense_done = True
@@ -1185,9 +1165,6 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'esp32_serial') and self.esp32_serial and self.esp32_serial.is_open:
             try:
                 print(f"Closing ESP32 serial port {self.esp32_port_name}...")
-                # Maybe send a final 'lock' command?
-                # self._send_to_esp32("lock")
-                # time.sleep(0.1)
                 self.esp32_serial.close()
                 print("ESP32 serial port closed.")
             except serial.SerialException as e:
@@ -1201,5 +1178,5 @@ class MainWindow(QMainWindow):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow()
-    window.showMaximized() # Show maximized
+    window.showMaximized()
     sys.exit(app.exec()) 
