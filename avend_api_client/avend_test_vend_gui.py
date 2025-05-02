@@ -1,6 +1,6 @@
 """
 PySide 6 Client Test Application for the AVend Local Dispense API
-Max Chen - v0.3.1
+Max Chen
 """
 
 import sys

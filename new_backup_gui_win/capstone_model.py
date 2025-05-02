@@ -36,7 +36,8 @@ CLASS_TO_BUTTON_MAP = {
     'safety_goggles': 'glasses',
     'beardnet': 'beardnet',
     'earplugs': 'earplugs',
-    'gloves': 'gloves'
+    'gloves': 'gloves',
+    'vest' : 'vest'
 }
 
 # Global variable to store detection results - Will be moved into DetectionThread
