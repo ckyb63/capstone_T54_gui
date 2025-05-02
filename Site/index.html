@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPE A.I. Vending Machine - Purdue Polytechnic Senior Capstone</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>PPE A.I. Vending Machine</h1>
+            <p class="subtitle">Team 54 - Spring/Fall 2025 Purdue Polytechnic Senior Capstone</p>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#problem">Problem Statement</a></li>
+            <li><a href="#solution">Our Solution</a></li>
+            <li><a href="#design">Final Design</a></li>
+            <li><a href="#team">Team Members</a></li>
+            <li><a href="#future">Future Work</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="problem" class="content-section">
+            <h2>Problem Statement</h2>
+            <div class="section-content">
+                <div class="text-content">
+                    <p>Ensuring factory-wide workplace PPE compliance is a significant challenge. Traditional monitoring through manual checks or signage frequently results in team injuries due to inadequate PPE usage.</p>
+                    <p>Our team has developed an intelligent vending machine system to combat this issue, utilizing AI camera technology to sense if a worker wears correct PPE and a deployment system to properly dispense missing items to them.</p>
+                </div>
+                <div class="image-content">
+                    <img src="images/problem-statement.jpg" alt="PPE Compliance Issues" class="section-image">
+                </div>
+            </div>
+        </section>
+
+        <section id="solution" class="content-section">
+            <h2>Our Solution</h2>
+            <div class="section-content">
+                <div class="image-content">
+                    <img src="images/solution.jpg" alt="AI Vending Machine Solution" class="section-image">
+                </div>
+                <div class="text-content">
+                    <p>Our result produced a smart vending machine that detects if a user is PPE compliant. Our final model is designed with high accuracy and features a cutting-edge camera scan method.</p>
+                    <p>The camera scan indicates the PPE items are missing. The worker will then click on the AI icon that is highlighted, which will communicate with the vending machine to dispense the specific item.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="design" class="content-section">
+            <h2>Final Design</h2>
+            <div class="section-content full-width">
+                <div class="design-grid">
+                    <div class="design-component">
+                        <h3>Camera System</h3>
+                        <ul>
+                            <li>Uses a Onsemi Camera with 8MP Resolution</li>
+                            <li>Wide Dynamic Range for dynamic lighting conditions</li>
+                            <li>Low latency streaming for real-time analysis</li>
+                            <li>Auto integration for accurate color computation algorithms</li>
+                        </ul>
+                    </div>
+                    <div class="design-component">
+                        <h3>Model (You Only Look Once)</h3>
+                        <ul>
+                            <li>A single-shot model looks at the image only once</li>
+                            <li>Splits the image into grids, called cells</li>
+                            <li>For each grid, calculates the class probabilities, the box predictions and the confidence scores</li>
+                            <li>Uses the three vectors calculated to display the output boxes on the image</li>
+                        </ul>
+                    </div>
+                    <div class="design-component">
+                        <h3>Graphical User Interface</h3>
+                        <ul>
+                            <li>Application developed with PySide6</li>
+                            <li>Python backend API communication</li>
+                            <li>PPE buttons show if respective PPE is detected, safety gate is unlocked if all PPE is detected</li>
+                            <li>PPE items are dispensed when respective buttons are pressed</li>
+                            <li>Override button overrides all detection states and opens the safety gate lock</li>
+                        </ul>
+                    </div>
+                    <div class="design-component">
+                        <h3>Vending Machine Integration</h3>
+                        <ul>
+                            <li>Vending machine is connected with two Avend Springboards</li>
+                            <li>The Nvidia Jetson communicates with them through the HTTP REST protocol to request items to be dispensed</li>
+                            <li>ESP32 is used to demonstrate a version of safety gate lock implementation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="team" class="content-section">
+            <h2>Team Members</h2>
+            <div class="team-grid">
+                <div class="team-member">
+                    <div class="member-image"></div>
+                    <h3>Adrian Calderon</h3>
+                </div>
+                <div class="team-member">
+                    <div class="member-image"></div>
+                    <h3>Christopher Campbell</h3>
+                </div>
+                <div class="team-member">
+                    <div class="member-image"></div>
+                    <h3>Max Chen</h3>
+                </div>
+                <div class="team-member">
+                    <div class="member-image"></div>
+                    <h3>Aditya Prabhu</h3>
+                </div>
+                <div class="team-member">
+                    <div class="member-image"></div>
+                    <h3>Ryan Hay</h3>
+                </div>
+                <div class="team-member">
+                    <div class="member-image"></div>
+                    <h3>Cameron Johnson</h3>
+                </div>
+            </div>
+        </section>
+
+        <section id="future" class="content-section">
+            <h2>Future Work</h2>
+            <div class="section-content">
+                <div class="text-content">
+                    <h3>Software</h3>
+                    <p>Currently, the AI is a very simple script written in PyOLED; the application could be further improved with public datasets.</p>
+                    
+                    <h3>Model Optimization</h3>
+                    <p>The AI computer vision deployment example is trained using public datasets, but to improve accuracy and reliability, the model should be re-trained on custom datasets.</p>
+                    
+                    <h3>Hardware</h3>
+                    <p>We are at the "proof of concept" stage of the project, so all hardware aside from the main Jetson computer can and should be improved at a later stage.</p>
+                    
+                    <h3>Safety Gate</h3>
+                    <p>Actual safety gate implementations requires strict adherence to related safety codes.</p>
+                </div>
+                <div class="image-content">
+                    <img src="images/future-work.jpg" alt="Future Improvements" class="section-image">
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <h2>Customer Background</h2>
+            <div class="section-content">
+                <div class="text-content">
+                    <p>Packaging Systems of Indiana is a total corporation based in Lafayette, IN. As a focus on sustainability, the corporation's goal is to provide environmentally friendly options across Distribution, Waste, Recycling, and more.</p>
+                    <p>Machine operators are required to a widespread set of various PPE, but video review shows that workers often don't wear PPE such as ear plugs, despite company requirements. The goal of the project is to detect whether or not they are in compliance, and to encourage case of wearing it.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="logo-section">
+                <img src="images/purdue-logo.png" alt="Purdue University Logo" class="logo">
+                <img src="images/polytechnic-logo.png" alt="Polytechnic Institute Logo" class="logo">
+            </div>
+            <div class="copyright">
+                <p>&copy; 2025 Team 54 - Purdue Polytechnic Senior Capstone. All rights reserved.</p>
+            </div>
+            <div class="github-link">
+                <a href="https://github.com/ckyb63/capstone_T54_gui" target="_blank">
+                    <i class="fab fa-github"></i> View on GitHub
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html> 
