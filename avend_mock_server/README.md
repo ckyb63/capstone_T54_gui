@@ -14,23 +14,15 @@ A Flask-based mock server that simulates the AVend Local Dispense API for testin
 - Python 3.6+
 - Flask
 
-## Installation
-
-1. Install the required dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
 ## Usage
 
 1. Start the mock server:
 
 ```bash
-python mock_server.py
+python Avend_Server_Mock.py
 ```
 
-1. The server will run on [http://127.0.0.1:8080](http://127.0.0.1:8080)
+1. The server will run on [http://127.0.0.1:8080](http://127.0.0.1:8080) as well as a IP specifed by your network.
 
 2. You can view the server status and active sessions by visiting [http://127.0.0.1:8080](http://127.0.0.1:8080) in your web browser
 

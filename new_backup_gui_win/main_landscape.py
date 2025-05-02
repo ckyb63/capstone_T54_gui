@@ -118,7 +118,7 @@ class DetectionThread(QThread):
             if torch.cuda.is_available():
                 device_to_use = 'cuda:0'
 
-            results = self.model.predict(frame_copy, conf=0.5, verbose=False, stream=True, device=device_to_use)
+            results = self.model.predict(frame_copy, conf = 0.15, stream=True, device=device_to_use)
 
             processed_a_result = False
             for result in results:
@@ -384,7 +384,7 @@ class MainWindow(QMainWindow):
 
         # --- Determine Default ESP32 Port based on OS ---
         if platform.system() == "Windows":
-            self.esp32_port_name = "COM9"
+            self.esp32_port_name = "COM5"
         elif platform.system() == "Linux":
             self.esp32_port_name = "/dev/ttyUSB0"
         else:
