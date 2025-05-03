@@ -4,3 +4,5 @@ capstone_T54_gui.code-workspace
 .venv
 *.pt
 *.env
+local_server.py
+site_recommendations.md

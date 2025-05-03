@@ -14,19 +14,30 @@
     <header>
         <div class="header-content">
             <h1>PPE A.I. Vending Machine</h1>
-            <p class="subtitle">Team 54 - Spring/Fall 2025 Purdue Polytechnic Senior Capstone</p>
+            <p class="subtitle">Spring 2025 Purdue Polytechnic Senior Capstone - Team 54</p>
         </div>
     </header>
 
     <nav>
-        <ul>
-            <li><a href="#problem">Problem Statement</a></li>
-            <li><a href="#solution">Our Solution</a></li>
-            <li><a href="#design">Final Design</a></li>
-            <li><a href="#team">Team Members</a></li>
-            <li><a href="#future">Future Work</a></li>
-        </ul>
+        <div class="nav-container">
+            <button class="hamburger-menu" aria-label="Toggle menu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+            <ul class="nav-links">
+                <li><a href="#problem">Problem Statement</a></li>
+                <li><a href="#solution">Our Solution</a></li>
+                <li><a href="#design">Final Design</a></li>
+                <li><a href="#team">Team Members</a></li>
+                <li><a href="#future">Future Work</a></li>
+                <li><a href="#customer">Customer Background</a></li>
+                <li><a href="resources.html">Resources</a></li>
+            </ul>
+        </div>
     </nav>
+    
+    <div class="nav-overlay"></div>
 
     <main>
         <section id="problem" class="content-section">
@@ -36,9 +47,6 @@
                     <p>Ensuring factory-wide workplace PPE compliance is a significant challenge. Traditional monitoring through manual checks or signage frequently results in team injuries due to inadequate PPE usage.</p>
                     <p>Our team has developed an intelligent vending machine system to combat this issue, utilizing AI camera technology to sense if a worker wears correct PPE and a deployment system to properly dispense missing items to them.</p>
                 </div>
-                <div class="image-content">
-                    <img src="images/problem-statement.jpg" alt="PPE Compliance Issues" class="section-image">
-                </div>
             </div>
         </section>
 
@@ -46,11 +54,16 @@
             <h2>Our Solution</h2>
             <div class="section-content">
                 <div class="image-content">
-                    <img src="images/solution.jpg" alt="AI Vending Machine Solution" class="section-image">
+                    <figure class="section-figure">
+                        <img src="images/solution_sketch.png" alt="AI Vending Machine Solution" class="section-image">
+                        <figcaption>Fig 0. Initial Solution Sketch</figcaption>
+                    </figure>
                 </div>
                 <div class="text-content">
-                    <p>Our result produced a smart vending machine that detects if a user is PPE compliant. Our final model is designed with high accuracy and features a cutting-edge camera scan method.</p>
-                    <p>The camera scan indicates the PPE items are missing. The worker will then click on the AI icon that is highlighted, which will communicate with the vending machine to dispense the specific item.</p>
+                    <p>Our result produced a smart vending machine that detects if a user is PPE compliant and will let them through the safety gate. If the user is not compliant, the machine will not let them through and will dispense the missing PPE item.</p>
+                    <p>Utilizing a Yolo computer vision model, the PPE items are detected and their detection is displayed on the graphical user interface through the color indicators on the PPE buttons.</p>
+                    <p>The user can click on the buttons of missing PPE for the machine to dispense the item.</p>
+                    <p>An override button is also provided to let users through the safety gate in case of emergency.</p>
                 </div>
             </div>
         </section>
@@ -60,16 +73,25 @@
             <div class="section-content full-width">
                 <div class="design-grid">
                     <div class="design-component">
-                        <h3>Camera System</h3>
+                        <h3>Camera</h3>
+                        <figure class="component-figure">
+                            <img src="images/onsemi_cam.png" alt="Camera System" class="component-image">
+                            <figcaption>Fig 1. Onsemi Ar0821 Camera Module</figcaption>
+                        </figure>
                         <ul>
-                            <li>Uses a Onsemi Camera with 8MP Resolution</li>
-                            <li>Wide Dynamic Range for dynamic lighting conditions</li>
-                            <li>Low latency streaming for real-time analysis</li>
+                            <li>An Onsemi Ar0821 Camera</li>
+                            <li>8MP at 4k resolution</li>
+                            <li>High Dynamic Range for dynamic lighting conditions</li>
+                            <li>Up to 60 frames per second to handle fast moving objects/people</li>
                             <li>Auto integration for accurate color computation algorithms</li>
                         </ul>
                     </div>
                     <div class="design-component">
-                        <h3>Model (You Only Look Once)</h3>
+                        <h3>Vision Model (You Only Look Once)</h3>
+                        <figure class="component-figure">
+                            <img src="images/yolo_section.png" alt="YOLO Vision Model" class="component-image">
+                            <figcaption>Fig 2. YOLO Model Architecture</figcaption>
+                        </figure>
                         <ul>
                             <li>A single-shot model looks at the image only once</li>
                             <li>Splits the image into grids, called cells</li>
@@ -79,6 +101,10 @@
                     </div>
                     <div class="design-component">
                         <h3>Graphical User Interface</h3>
+                        <figure class="component-figure">
+                            <img src="images/gui_demo.png" alt="PySide6 GUI" class="component-image">
+                            <figcaption>Fig 3. PySide6 User Interface</figcaption>
+                        </figure>
                         <ul>
                             <li>Application developed with PySide6</li>
                             <li>Python backend API communication</li>
@@ -89,8 +115,12 @@
                     </div>
                     <div class="design-component">
                         <h3>Vending Machine Integration</h3>
+                        <figure class="component-figure">
+                            <img src="images/vending_integration.png" alt="Vending Machine Integration" class="component-image">
+                            <figcaption>Fig 4. Avend SmartVend Integration</figcaption>
+                        </figure>
                         <ul>
-                            <li>Vending machine is connected with two Avend Springboards</li>
+                            <li>Vending machine is connected with two Avend SmartVend Kits</li>
                             <li>The Nvidia Jetson communicates with them through the HTTP REST protocol to request items to be dispensed</li>
                             <li>ESP32 is used to demonstrate a version of safety gate lock implementation</li>
                         </ul>
@@ -134,39 +164,60 @@
             <div class="section-content">
                 <div class="text-content">
                     <h3>Software</h3>
-                    <p>Currently, the AI is a very simple script written in PyOLED; the application could be further improved with public datasets.</p>
+                    <ul>
+                        <li>Currently the GUI is a very simple script written with PySide6, the application could be further improved with proper Qt application development workflows.</li>
+                        <li>An earlier version of the GUI was written with PyQt5 integrated with ROS 2, it also explores implementing dispensing tracking, inventory management, as well as Amazon AWS integration for robust data analytics.</li>
+                    </ul>
                     
                     <h3>Model Optimization</h3>
-                    <p>The AI computer vision deployment example is trained using public datasets, but to improve accuracy and reliability, the model should be re-trained on custom datasets.</p>
-                    
+                    <ul>
+                        <li>This computer vision model is trained using public datasets, but to improve accuracy and reliability, the model should be re-trained on custom datasets with more controlled environments, mainly lighting.</li>
+                        <li>Another approach would be utilizing prompt engineering with other kinds of AI models such as OpenAI's GPT-4.</li>
+                    </ul>
+
                     <h3>Hardware</h3>
-                    <p>We are at the "proof of concept" stage of the project, so all hardware aside from the main Jetson computer can and should be improved at a later stage.</p>
+                    <ul>
+                        <li>We are at the "proof of concept" stage of the project, so all hardware aside from the main Jetson computer can and should be improved at a later stage.</li>
+                    </ul>
                     
                     <h3>Safety Gate</h3>
-                    <p>Actual safety gate implementations requires strict adherence to related safety codes.</p>
+                    <ul>
+                        <li>Actual safety gate implementations requires strict adherence to related safety codes.</li>
+                    </ul>
                 </div>
                 <div class="image-content">
-                    <img src="images/future-work.jpg" alt="Future Improvements" class="section-image">
+                    <figure class="section-figure">
+                        <img src="images/vending_machine.jpg" alt="Future Improvements" class="section-image">
+                        <figcaption>Fig 5. Completed Vending Machine System</figcaption>
+                    </figure>
                 </div>
             </div>
         </section>
-
-        <section class="content-section">
+        
+        <section id="customer" class="content-section">
             <h2>Customer Background</h2>
             <div class="section-content">
                 <div class="text-content">
                     <p>Packaging Systems of Indiana is a total corporation based in Lafayette, IN. As a focus on sustainability, the corporation's goal is to provide environmentally friendly options across Distribution, Waste, Recycling, and more.</p>
-                    <p>Machine operators are required to a widespread set of various PPE, but video review shows that workers often don't wear PPE such as ear plugs, despite company requirements. The goal of the project is to detect whether or not they are in compliance, and to encourage case of wearing it.</p>
+                    <p>Machine operators are required to a widespread set of various PPE, but video review shows that workers often don't wear PPE such as ear plugs, despite company requirements. The goal of the project is to detect whether or not they are in compliance, and to encourage case of wearing it.</p>               
                 </div>
             </div>
         </section>
     </main>
 
+    <a href="#" class="back-to-top" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
     <footer>
         <div class="footer-content">
             <div class="logo-section">
-                <img src="images/purdue-logo.png" alt="Purdue University Logo" class="logo">
-                <img src="images/polytechnic-logo.png" alt="Polytechnic Institute Logo" class="logo">
+                <a href="https://polytechnic.purdue.edu/" target="_blank">
+                    <img src="images/Polytechnic-logo.svg" alt="Purdue Polytechnic Institute Logo" class="logo">
+                </a>
+                <a href="https://packaging-systems.com/" target="_blank" class="customer-logo-link">
+                    <img src="images/packing_systems.webp" alt="Packaging Systems of Indiana Logo" class="logo customer-logo">
+                </a>
             </div>
             <div class="copyright">
                 <p>&copy; 2025 Team 54 - Purdue Polytechnic Senior Capstone. All rights reserved.</p>

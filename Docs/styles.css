@@ -21,28 +21,53 @@ body {
     line-height: 1.6;
     color: var(--dark-color);
     background-color: var(--light-color);
+    overflow-x: hidden;
 }
 
 /* Header Styles */
 header {
-    background: linear-gradient(rgba(0, 68, 124, 0.9), rgba(0, 68, 124, 0.9)), url('images/header-bg.jpg');
-    background-size: cover;
-    background-position: center;
+    position: relative;
     color: white;
     text-align: center;
-    padding: 4rem 1rem;
+    padding: 5rem 1rem 7rem; /* Increased bottom padding to move text up */
+    overflow: hidden;
+}
+
+/* Background image container to allow separate positioning */
+header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(rgba(0, 68, 124, 0.8), rgba(0, 68, 124, 0.4) 40%, rgba(0, 68, 124, 0.8)), url('images/t54_group.jpg');
+    background-size: cover;
+    background-position: center 25%; /* Position to show faces below the text */
+    z-index: -1;
+}
+
+.header-content {
+    position: relative;
+    z-index: 2;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1.5rem;
+    border-radius: 8px;
 }
 
 .header-content h1 {
     font-size: 3rem;
     margin-bottom: 0.5rem;
     font-weight: 700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .subtitle {
     font-size: 1.2rem;
     font-weight: 300;
     margin-bottom: 1rem;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 /* Navigation */
@@ -52,28 +77,79 @@ nav {
     position: sticky;
     top: 0;
     z-index: 100;
+    padding: 0.25rem 0; /* Reduced padding from 0.5rem to 0.25rem */
 }
 
-nav ul {
+.nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3rem 1rem; /* Reduced padding from 0.5rem to 0.3rem */
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 45px; /* Reduced from 50px to 45px */
+}
+
+.nav-links {
     display: flex;
     justify-content: center;
     list-style: none;
-    padding: 1rem;
+    padding: 0.6rem; /* Reduced from 0.8rem to 0.6rem */
+    margin: 0;
+    transition: all 0.3s ease;
 }
 
-nav ul li {
+.nav-links li {
     padding: 0 1.5rem;
 }
 
-nav ul li a {
+.nav-links a {
     color: var(--primary-color);
     text-decoration: none;
     font-weight: 500;
     transition: color 0.3s;
+    font-size: 1rem; /* Reduced from 1.1rem to 1rem */
+    padding: 0.4rem 0; /* Reduced from 0.5rem to 0.4rem */
+    display: inline-block;
 }
 
-nav ul li a:hover {
+.nav-links a:hover {
     color: var(--secondary-color);
+}
+
+/* Hamburger Menu */
+.hamburger-menu {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    z-index: 110;
+    position: absolute;
+    left: 1rem;
+}
+
+.bar {
+    display: block;
+    width: 28px;
+    height: 4px;
+    margin: 6px auto;
+    background-color: var(--primary-color);
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.nav-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 90;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
 }
 
 /* Main Content */
@@ -135,7 +211,7 @@ main {
 /* Design Grid */
 .design-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 2rem;
     width: 100%;
 }
@@ -151,6 +227,7 @@ main {
     color: var(--primary-color);
     margin-bottom: 1rem;
     font-size: 1.3rem;
+    text-align: center;
 }
 
 .design-component ul {
@@ -190,65 +267,187 @@ main {
 
 /* Footer */
 footer {
-    background-color: var(--primary-color);
+    background-color: #00447c;
     color: white;
-    padding: 2rem 0;
-    margin-top: 2rem;
+    padding: 1.5rem 0;
+    margin-top: 3rem;
 }
 
 .footer-content {
     max-width: 1200px;
     margin: 0 auto;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     padding: 0 2rem;
 }
 
 .logo-section {
     display: flex;
     align-items: center;
-    gap: 2rem;
+    flex: 1;
+}
+
+.logo-section a {
+    display: block;
 }
 
 .logo {
-    height: 50px;
-    width: auto;
+    max-width: 200px;
+    height: auto;
+}
+
+.customer-logo-link {
+    margin-left: 1rem;
+}
+
+.customer-logo {
+    max-width: 160px;
+    max-height: 45px;
+    object-fit: contain;
 }
 
 .copyright {
+    flex: 2;
     text-align: center;
     font-size: 0.9rem;
-    opacity: 0.8;
+}
+
+.github-link {
+    flex: 1;
+    text-align: right;
 }
 
 .github-link a {
     color: white;
     text-decoration: none;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    transition: color 0.2s;
+    font-size: 0.9rem;
 }
 
 .github-link a:hover {
     color: var(--secondary-color);
 }
 
-/* Responsive Design */
+.github-link i {
+    font-size: 1.2rem;
+}
+
+/* Responsive Footer */
 @media (max-width: 768px) {
-    nav ul {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    nav ul li {
-        padding: 0.5rem 0;
-    }
-    
     .footer-content {
         flex-direction: column;
         gap: 1.5rem;
+        text-align: center;
+    }
+    
+    .logo-section {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .customer-logo-link {
+        margin-left: 0;
+    }
+    
+    .github-link {
+        text-align: center;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hamburger-menu {
+        display: block;
+    }
+    
+    nav {
+        padding: 0.3rem 0; /* Reduced from 0.6rem to 0.3rem */
+        position: fixed;
+        width: 100%;
+        top: 0;
+        left: 0;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        z-index: 1000;
+    }
+    
+    /* Adjust body padding to match new nav height */
+    body {
+        padding-top: 60px; /* Reduced from 70px to 60px */
+    }
+    
+    /* Add a small indicator to show when scrolled */
+    nav:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    body.scrolled nav:after {
+        opacity: 1;
+    }
+    
+    .nav-container {
+        justify-content: center;
+        position: relative;
+        min-height: 45px; /* Reduced from 55px to 45px */
+    }
+    
+    .nav-links {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        flex-direction: column;
+        background-color: white;
+        height: 100vh;
+        width: 250px;
+        padding: 80px 20px 20px;
+        box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+        transition: left 0.3s ease;
+        z-index: 100;
+    }
+    
+    .nav-links li {
+        padding: 1rem 0;
+        width: 100%;
+        text-align: left;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .nav-links a {
+        font-size: 1.1rem; /* Reduced from 1.2rem to 1.1rem */
+        padding: 0.4rem 0; /* Reduced from 0.5rem to 0.4rem */
+        display: block;
+    }
+    
+    body.menu-open .nav-links {
+        left: 0;
+    }
+    
+    body.menu-open .nav-overlay {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    body.menu-open .hamburger-menu .bar:nth-child(1) {
+        transform: translateY(10px) rotate(45deg);
+    }
+    
+    body.menu-open .hamburger-menu .bar:nth-child(2) {
+        opacity: 0;
+    }
+    
+    body.menu-open .hamburger-menu .bar:nth-child(3) {
+        transform: translateY(-10px) rotate(-45deg);
     }
     
     .section-content {
@@ -257,6 +456,20 @@ footer {
     
     .header-content h1 {
         font-size: 2.2rem;
+    }
+    
+    .design-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Fix header to reach navigation bar */
+    header {
+        margin-top: -60px; /* Match body padding-top */
+        padding-top: 65px; /* Slightly more than margin-top to ensure overlap */
+    }
+    
+    header::before {
+        background-position: center 30%; /* Adjust background position for mobile */
     }
 }
 
@@ -273,4 +486,125 @@ footer {
 
 .content-section {
     animation: fadeIn 0.8s ease-out forwards;
+}
+
+/* Content Sections Styling */
+.content-section ul {
+    padding-left: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.content-section li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+
+#future ul {
+    padding-left: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+#future li {
+    margin-bottom: 0.8rem;
+    line-height: 1.6;
+    position: relative;
+    padding-left: 0.5rem;
+}
+
+#future h3 {
+    color: var(--primary-color);
+    margin: 1.5rem 0 0.8rem 0;
+    font-size: 1.3rem;
+}
+
+#future h3:first-child {
+    margin-top: 0;
+}
+
+/* Component Figures */
+.component-figure {
+    margin: 0 0 1.5rem 0;
+    text-align: center;
+}
+
+.component-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    box-shadow: var(--box-shadow);
+    margin-bottom: 0.8rem;
+    max-height: 200px; /* Control maximum height */
+    width: auto;
+    object-fit: contain; /* Maintain aspect ratio without cropping */
+}
+
+.component-figure figcaption {
+    font-size: 0.9rem;
+    color: #666;
+    font-style: italic;
+}
+
+/* Section Figures */
+.section-figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.section-figure figcaption {
+    font-size: 0.9rem;
+    color: #666;
+    font-style: italic;
+    margin-top: 0.5rem;
+    text-align: center;
+    max-width: 90%;
+}
+
+.section-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: var(--box-shadow);
+}
+
+/* Back to Top Button */
+.back-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background-color: var(--primary-color);
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 99;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.back-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.back-to-top:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-3px);
+}
+
+.back-to-top i {
+    font-size: 1.5rem;
+}
+
+@media (min-width: 769px) {
+    .back-to-top {
+        display: none;
+    }
 } 

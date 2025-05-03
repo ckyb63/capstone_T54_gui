@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resources - PPE A.I. Vending Machine</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Add resources page specific styles -->
+    <style>
+        .resources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .resource-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .resource-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .resource-card h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .resource-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .resource-list li {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        
+        .resource-list li:before {
+            content: '\f0c1';
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--secondary-color);
+        }
+        
+        .resource-list li a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .resource-list li a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+        
+        .resource-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+        
+        .back-to-home {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 0.8rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .back-to-home:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        @media (max-width: 768px) {
+            .resources-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>PPE A.I. Vending Machine</h1>
+            <p class="subtitle">Resources & Documentation</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="nav-container">
+            <button class="hamburger-menu" aria-label="Toggle menu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+            <ul class="nav-links">
+                <li><a href="index.html#problem">Problem Statement</a></li>
+                <li><a href="index.html#solution">Our Solution</a></li>
+                <li><a href="index.html#design">Final Design</a></li>
+                <li><a href="index.html#team">Team Members</a></li>
+                <li><a href="index.html#future">Future Work</a></li>
+                <li><a href="index.html#customer">Customer Background</a></li>
+                <li><a href="resources.html">Resources</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <div class="nav-overlay"></div>
+
+    <main>
+        <section class="content-section">
+            <h2>Project Resources</h2>
+            <p>Welcome to the resources section of our PPE A.I. Vending Machine project. Here you'll find technical documentation, research papers, code repositories, and other materials related to our project.</p>
+            
+            <div class="resources-grid">
+                <div class="resource-card">
+                    <h3>Technical Documentation</h3>
+                    <ul class="resource-list">
+                        <li>
+                            <a href="#" target="_blank">System Architecture Overview</a>
+                            <p class="resource-description">Detailed breakdown of the AI vending machine's architecture and component interactions.</p>
+                        </li>
+                        <li>
+                            <a href="#" target="_blank">AI Model Documentation</a>
+                            <p class="resource-description">Technical details on the YOLO-based detection model, including training parameters and performance metrics.</p>
+                        </li>
+                        <li>
+                            <a href="#" target="_blank">User Manual</a>
+                            <p class="resource-description">Complete user guide for operating and maintaining the PPE A.I. Vending Machine.</p>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="resource-card">
+                    <h3>Code & Repositories</h3>
+                    <ul class="resource-list">
+                        <li>
+                            <a href="https://github.com/ckyb63/capstone_T54_gui" target="_blank">GitHub Repository</a>
+                            <p class="resource-description">Access the full codebase and documentation for our project.</p>
+                        </li>
+                        <li>
+                            <a href="#" target="_blank">API Documentation</a>
+                            <p class="resource-description">Reference guide for the Avend API integration.</p>
+                        </li>
+                        <li>
+                            <a href="#" target="_blank">ESP32 Safety Gate Code</a>
+                            <p class="resource-description">Code and setup instructions for the ESP32-based safety gate system.</p>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="resource-card">
+                    <h3>Research & Papers</h3>
+                    <ul class="resource-list">
+                        <li>
+                            <a href="#" target="_blank">PPE Detection Research Paper</a>
+                            <p class="resource-description">Our research into computer vision-based PPE detection methods.</p>
+                        </li>
+                        <li>
+                            <a href="#" target="_blank">Safety Compliance Study</a>
+                            <p class="resource-description">Analysis of PPE compliance rates before and after implementation.</p>
+                        </li>
+                        <li>
+                            <a href="#" target="_blank">Industry Standards Reference</a>
+                            <p class="resource-description">Compilation of relevant industry standards and compliance requirements.</p>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="resource-card">
+                    <h3>Presentations & Media</h3>
+                    <ul class="resource-list">
+                        <li>
+                            <a href="#" target="_blank">Project Presentation Slides</a>
+                            <p class="resource-description">Final presentation deck from the capstone showcase.</p>
+                        </li>
+                        <li>
+                            <a href="#" target="_blank">Demo Videos</a>
+                            <p class="resource-description">Video demonstrations of the system in action.</p>
+                        </li>
+                        <li>
+                            <a href="#" target="_blank">Press Coverage</a>
+                            <p class="resource-description">News and media articles featuring our project.</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <a href="index.html" class="back-to-home">
+                <i class="fas fa-arrow-left"></i> Back to Main Page
+            </a>
+        </section>
+    </main>
+
+    <a href="#" class="back-to-top" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+    <footer>
+        <div class="footer-content">
+            <div class="logo-section">
+                <a href="https://polytechnic.purdue.edu/" target="_blank">
+                    <img src="images/Polytechnic-logo.svg" alt="Purdue Polytechnic Institute Logo" class="logo">
+                </a>
+                <a href="https://packaging-systems.com/" target="_blank" class="customer-logo-link">
+                    <img src="images/packing_systems.webp" alt="Packaging Systems of Indiana Logo" class="logo customer-logo">
+                </a>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2025 Team 54 - Purdue Polytechnic Senior Capstone. All rights reserved.</p>
+            </div>
+            <div class="github-link">
+                <a href="https://github.com/ckyb63/capstone_T54_gui" target="_blank">
+                    <i class="fab fa-github"></i> View on GitHub
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburger = document.querySelector('.hamburger-menu');
+            const navOverlay = document.querySelector('.nav-overlay');
+            const navLinks = document.querySelectorAll('.nav-links a');
+            
+            function toggleMobileMenu() {
+                document.body.classList.toggle('menu-open');
+            }
+            
+            hamburger.addEventListener('click', toggleMobileMenu);
+            navOverlay.addEventListener('click', toggleMobileMenu);
+            
+            // Close menu when a link is clicked
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (document.body.classList.contains('menu-open')) {
+                        toggleMobileMenu();
+                    }
+                });
+            });
+            
+            // Add scrolled class to body when page is scrolled
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 20) {
+                    document.body.classList.add('scrolled');
+                } else {
+                    document.body.classList.remove('scrolled');
+                }
+                
+                // Show/hide back to top button
+                if (window.scrollY > 300) {
+                    document.querySelector('.back-to-top').classList.add('visible');
+                } else {
+                    document.querySelector('.back-to-top').classList.remove('visible');
+                }
+            });
+            
+            // Image lazy loading
+            const lazyImages = document.querySelectorAll('img');
+            
+            // Add loading="lazy" attribute to images
+            lazyImages.forEach(img => {
+                img.setAttribute('loading', 'lazy');
+            });
+            
+            // Back to top button functionality
+            document.querySelector('.back-to-top').addEventListener('click', () => {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html> 
