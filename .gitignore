@@ -4,5 +4,12 @@ capstone_T54_gui.code-workspace
 .venv
 *.pt
 *.env
+
+# Site Testing Files
+
 local_server.py
 site_recommendations.md
+ngrok.exe
+ngrok.zip
+ngrok_tunnel.py
+cloudflared-windows-amd64.exe

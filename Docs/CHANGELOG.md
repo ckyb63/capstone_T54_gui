@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.12.1] - 2025-May-05
+
+- Overall site testing and updates.
+- Main Readme udpated.
+
 ## [0.12.0] - 2025-May-01 - The Tech Expo
 
 - Overall repository cleanup including renaming and reorganizing files, also updated all avaliable documentation.

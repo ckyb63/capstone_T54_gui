@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PPE A.I. Vending Machine - Purdue Polytechnic Senior Capstone</title>
+    <!-- Favicon settings -->
+    <link rel="icon" type="image/png" href="images/P_favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="images/P_favicon.png">
+    <meta name="msapplication-TileImage" content="images/P_favicon.png">
+    <meta name="msapplication-TileColor" content="#00447c">
+    <style>
+        /* Custom favicon media queries */
+        @media (prefers-color-scheme: light) {
+            link[rel="icon"] { 
+                object-fit: contain !important;
+            }
+        }
+    </style>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,6 +38,9 @@
                 <span class="bar"></span>
                 <span class="bar"></span>
             </button>
+            <a href="index.html" class="mobile-home-icon" aria-label="Home">
+                <i class="fas fa-home"></i>
+            </a>
             <ul class="nav-links">
                 <li><a href="#problem">Problem Statement</a></li>
                 <li><a href="#solution">Our Solution</a></li>
@@ -32,8 +48,10 @@
                 <li><a href="#team">Team Members</a></li>
                 <li><a href="#future">Future Work</a></li>
                 <li><a href="#customer">Customer Background</a></li>
-                <li><a href="resources.html">Resources</a></li>
             </ul>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
         </div>
     </nav>
     
@@ -54,10 +72,39 @@
             <h2>Our Solution</h2>
             <div class="section-content">
                 <div class="image-content">
-                    <figure class="section-figure">
-                        <img src="images/solution_sketch.png" alt="AI Vending Machine Solution" class="section-image">
-                        <figcaption>Fig 0. Initial Solution Sketch</figcaption>
-                    </figure>
+                    <div class="carousel-container">
+                        <div class="carousel-track">
+                            <div class="carousel-slide">
+                                <img src="images/solution_sketch.png" alt="AI Vending Machine Solution Sketch" class="carousel-image">
+                                <p class="caption">Initial Solution Sketch</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/vending_machine.jpg" alt="Completed Vending Machine" class="carousel-image">
+                                <p class="caption">Completed AI PPE Vending Machine</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/gui_demo.png" alt="GUI Interface" class="carousel-image">
+                                <p class="caption">PySide6User Interface Demo</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/demo_1.jpg" alt="Testing the PPE Detection" class="carousel-image">
+                                <p class="caption">Testing the PPE Detection</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/demo_2.jpg" alt="Testing the PPE Detection" class="carousel-image">
+                                <p class="caption">Testing the PPE Detection</p>
+                            </div>
+                            <div class="carousel-slide">    
+                                <img src="images/safety_gate_lock.jpg" alt="Safety Gate Lock" class="carousel-image">
+                                <p class="caption">Safety Gate Lock - With Electro-Magnetic Lock</p>
+                            </div>
+                            <!-- Add more slides as needed -->
+                        </div>
+                        <button class="carousel-btn prev-btn" aria-label="Previous image">&lt;</button>
+                        <button class="carousel-btn next-btn" aria-label="Next image">&gt;</button>
+                        <div class="carousel-dots"></div>
+                        <button class="carousel-btn fullscreen-btn" aria-label="View fullscreen"><i class="fas fa-expand"></i></button>
+                    </div>
                 </div>
                 <div class="text-content">
                     <p>Our result produced a smart vending machine that detects if a user is PPE compliant and will let them through the safety gate. If the user is not compliant, the machine will not let them through and will dispense the missing PPE item.</p>
@@ -76,7 +123,7 @@
                         <h3>Camera</h3>
                         <figure class="component-figure">
                             <img src="images/onsemi_cam.png" alt="Camera System" class="component-image">
-                            <figcaption>Fig 1. Onsemi Ar0821 Camera Module</figcaption>
+                            <figcaption>Onsemi Ar0821 Camera Module</figcaption>
                         </figure>
                         <ul>
                             <li>An Onsemi Ar0821 Camera</li>
@@ -90,7 +137,7 @@
                         <h3>Vision Model (You Only Look Once)</h3>
                         <figure class="component-figure">
                             <img src="images/yolo_section.png" alt="YOLO Vision Model" class="component-image">
-                            <figcaption>Fig 2. YOLO Model Architecture</figcaption>
+                            <figcaption>YOLO Model Architecture</figcaption>
                         </figure>
                         <ul>
                             <li>A single-shot model looks at the image only once</li>
@@ -103,7 +150,7 @@
                         <h3>Graphical User Interface</h3>
                         <figure class="component-figure">
                             <img src="images/gui_demo.png" alt="PySide6 GUI" class="component-image">
-                            <figcaption>Fig 3. PySide6 User Interface</figcaption>
+                            <figcaption>PySide6 User Interface</figcaption>
                         </figure>
                         <ul>
                             <li>Application developed with PySide6</li>
@@ -117,7 +164,7 @@
                         <h3>Vending Machine Integration</h3>
                         <figure class="component-figure">
                             <img src="images/vending_integration.png" alt="Vending Machine Integration" class="component-image">
-                            <figcaption>Fig 4. Avend SmartVend Integration</figcaption>
+                            <figcaption>Avend SmartVend Integration</figcaption>
                         </figure>
                         <ul>
                             <li>Vending machine is connected with two Avend SmartVend Kits</li>
@@ -126,36 +173,19 @@
                         </ul>
                     </div>
                 </div>
+                <div class="section-footer">
+                    <a href="final-design.html" class="section-link">View Detailed Final Design <i class="fas fa-arrow-right"></i></a>
+                </div>
             </div>
         </section>
 
         <section id="team" class="content-section">
             <h2>Team Members</h2>
-            <div class="team-grid">
-                <div class="team-member">
-                    <div class="member-image"></div>
-                    <h3>Adrian Calderon</h3>
-                </div>
-                <div class="team-member">
-                    <div class="member-image"></div>
-                    <h3>Christopher Campbell</h3>
-                </div>
-                <div class="team-member">
-                    <div class="member-image"></div>
-                    <h3>Max Chen</h3>
-                </div>
-                <div class="team-member">
-                    <div class="member-image"></div>
-                    <h3>Aditya Prabhu</h3>
-                </div>
-                <div class="team-member">
-                    <div class="member-image"></div>
-                    <h3>Ryan Hay</h3>
-                </div>
-                <div class="team-member">
-                    <div class="member-image"></div>
-                    <h3>Cameron Johnson</h3>
-                </div>
+            <div class="section-content">
+                <figure class="team-figure">
+                    <img src="images/t54_group.jpg" alt="Team 54 Members" class="section-image">
+                    <figcaption>From left to right: Adrian Calderon, Christopher Campbell, Aditya Prabhu, Cameron Johnson, (Vending Machine), Max Chen, Ryan Hay</figcaption>
+                </figure>
             </div>
         </section>
 
@@ -188,8 +218,11 @@
                 <div class="image-content">
                     <figure class="section-figure">
                         <img src="images/vending_machine.jpg" alt="Future Improvements" class="section-image">
-                        <figcaption>Fig 5. Completed Vending Machine System</figcaption>
+                        <figcaption>Completed Vending Machine System</figcaption>
                     </figure>
+                </div>
+                <div class="section-footer">
+                    <a href="future-work.html" class="section-link">View Detailed Future Work <i class="fas fa-arrow-right"></i></a>
                 </div>
             </div>
         </section>
@@ -215,18 +248,27 @@
                 <a href="https://polytechnic.purdue.edu/" target="_blank">
                     <img src="images/Polytechnic-logo.svg" alt="Purdue Polytechnic Institute Logo" class="logo">
                 </a>
+            </div>
+            <div class="logo-section">
                 <a href="https://packaging-systems.com/" target="_blank" class="customer-logo-link">
                     <img src="images/packing_systems.webp" alt="Packaging Systems of Indiana Logo" class="logo customer-logo">
                 </a>
             </div>
-            <div class="copyright">
-                <p>&copy; 2025 Team 54 - Purdue Polytechnic Senior Capstone. All rights reserved.</p>
-            </div>
             <div class="github-link">
                 <a href="https://github.com/ckyb63/capstone_T54_gui" target="_blank">
-                    <i class="fab fa-github"></i> View on GitHub
+                    <i class="fab fa-github"></i> View project on GitHub
                 </a>
             </div>
+            <div class="contact-section">
+                <!--<h3>Contact</h3>-->
+                <ul class="contact-list">
+                    <!--<li><a href="mailto:chen3901@purdue.edu"><i class="fas fa-envelope"></i> chen3901@purdue.edu</a></li>-->
+                    <li><a href="mailto:ckyb63@gmail.com"><i class="fas fa-envelope"></i>Contact Email</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; Spring 2025 Purdue Polytechnic Senior Capstone - Team 54. All rights reserved.</p>
         </div>
     </footer>
 

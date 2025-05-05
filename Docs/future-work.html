@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Future Work - PPE A.I. Vending Machine</title>
+    <!-- Favicon settings -->
+    <link rel="icon" type="image/png" href="images/P_favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="images/P_favicon.png">
+    <meta name="msapplication-TileImage" content="images/P_favicon.png">
+    <meta name="msapplication-TileColor" content="#00447c">
+    <style>
+        /* Custom favicon media queries */
+        @media (prefers-color-scheme: light) {
+            link[rel="icon"] { 
+                object-fit: contain !important;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Future Work</h1>
+            <p class="subtitle">PPE A.I. Vending Machine Project</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="nav-container">
+            <button class="hamburger-menu" aria-label="Toggle menu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+            <a href="index.html" class="mobile-home-icon" aria-label="Home">
+                <i class="fas fa-home"></i>
+            </a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="final-design.html">Final Design</a></li>
+                <li><a href="future-work.html" class="active">Future Work</a></li>
+            </ul>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+    </nav>
+    
+    <div class="nav-overlay"></div>
+
+    <main>
+        <p>The following are some potential areas for future work and improvements:</p>
+
+        <section class="content-section">
+            <h2>Software Improvements</h2>
+            <div class="section-content"></div>
+                <div class="text-content">
+                    <p>The current GUI implementation is built with PySide6, providing a functional but basic user interface. There are several key areas for improvement:</p>
+                    <p>Previously a PyQt5 version of the GUI was created with additional features, but it was replaced due to the Jetson not being able to run ROS2.</p>
+                 </div>
+            </div>
+            <div class="section-content">
+                <div class="image-content">
+                    <div class="carousel-container">
+                        <div class="carousel-track">
+                            <div class="carousel-slide">
+                                <img src="images/gui_demo.png" alt="Current GUI" class="carousel-image">
+                                <p class="caption">Current GUI</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/previous ros2 implementation/main_gui_window_101.png" alt="Previous ROS2 GUI - Main Window" class="carousel-image">
+                                <p class="caption">Previous ROS2 Implementation - Main Window</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/previous ros2 implementation/override_content_101.png" alt="Previous ROS2 GUI - Override Content" class="carousel-image">
+                                <p class="caption">Previous ROS2 Implementation - Override Content</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/previous ros2 implementation/settings_appearance.png" alt="Previous ROS2 GUI - Appearance Settings" class="carousel-image">
+                                <p class="caption">Previous ROS2 Implementation - Appearance Settings</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/previous ros2 implementation/settings_info.png" alt="Previous ROS2 GUI - Info Settings" class="carousel-image">
+                                <p class="caption">Previous ROS2 Implementation - Info Settings</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/previous ros2 implementation/settings_inventory_75.png" alt="Previous ROS2 GUI - Inventory Settings" class="carousel-image">
+                                <p class="caption">Previous ROS2 Implementation - Inventory Settings</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/previous ros2 implementation/settings_override_log_75.png" alt="Previous ROS2 GUI - Override Log" class="carousel-image">
+                                <p class="caption">Previous ROS2 Implementation - Override Log</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/previous ros2 implementation/settings_report.png" alt="Previous ROS2 GUI - Report Settings" class="carousel-image">
+                                <p class="caption">Previous ROS2 Implementation - Report Settings</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/previous ros2 implementation/settings_timing_75.png" alt="Previous ROS2 GUI - Timing Settings" class="carousel-image">
+                                <p class="caption">Previous ROS2 Implementation - Timing Settings</p>
+                            </div>
+                        </div>
+                        <button class="carousel-btn prev-btn" aria-label="Previous image">&lt;</button>
+                        <button class="carousel-btn next-btn" aria-label="Next image">&gt;</button>
+                        <div class="carousel-dots"></div>
+                        <button class="carousel-btn fullscreen-btn" aria-label="View fullscreen"><i class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+                <div class="text-content">
+                   
+                    <h3>Qt Application Development</h3>
+                    <ul>
+                        <li>Implement proper Qt application architecture using the Model-View-Controller pattern</li>
+                        <li>Create modular components for better code organization and maintainability</li>
+                        <li>Add unit tests for all application functionality</li>
+                        <li>Improve error handling and system robustness</li>
+                    </ul>
+                    
+                    <h3>User Experience Enhancements</h3>
+                    <ul>
+                        <li>Add user profiles and authentication for different access levels (operator, administrator)</li>
+                        <li>Implement customizable themes and accessibility features</li>
+                        <li>Create an admin dashboard for monitoring system performance</li>
+                        <li>Add multilingual support to accommodate diverse workforces</li>
+                    </ul>
+                    <h3>Additional Features</h3>
+                    <ul>
+                        <li>Add the additional features that are shown in the pictures.</li>
+                        <li>Tracking PPE dispensing history</li>
+                        <li>Tracking PPE usage patterns</li>
+                        <li>Reporting and analytics integration with ROSBag uploads to AWS S3</li>
+                        <li>Ability to change detailed settings and timings.</li>
+                        <li>Overall proper logging and tracking of events such as Override, Dispensing, etc.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <h2>Data Management & Analytics</h2>
+            <div class="section-content">
+                <div class="text-content">
+                    <p>A significant area for enhancement is implementing robust data tracking and analytics capabilities:</p>
+                    
+                    <h3>Inventory Management</h3>
+                    <ul>
+                        <li>Real-time inventory tracking of all PPE items</li>
+                        <li>Automated restocking notifications and supplier integration</li>
+                        <li>Consumption patterns analysis to optimize stock levels</li>
+                        <li>Integration with enterprise resource planning (ERP) systems</li>
+                    </ul>
+                    
+                    <h3>AWS Integration</h3>
+                    <ul>
+                        <li>Cloud-based data storage using Amazon S3</li>
+                        <li>Serverless computing with AWS Lambda for scalable processing</li>
+                        <li>Real-time analytics dashboard using QuickSight</li>
+                        <li>IoT integration using AWS IoT Core for machine-to-machine communication</li>
+                    </ul>
+                    
+                    <h3>Compliance Reporting</h3>
+                    <ul>
+                        <li>Automated compliance reports for safety audits</li>
+                        <li>Historical data analysis for identifying safety trends</li>
+                        <li>Department-specific PPE usage metrics</li>
+                        <li>Integration with safety management systems</li>
+                    </ul>
+
+                    <h3>Potential Employee Management System Integration</h3>
+                    <ul>
+                        <li>Integration with an existing employee management system to track employee PPE usage and compliance, through facial recognition.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <h2>AI Model Enhancement</h2>
+            <div class="section-content">
+                <div class="text-content">
+                    <p>The PPE detection capabilities can be significantly improved through several AI enhancements:</p>
+                    
+                    <h3>Custom Dataset Development</h3>
+                    <ul>
+                        <li>Creation of proprietary PPE detection datasets specific to the client's work environment</li>
+                        <li>Capture of data across various lighting conditions and environments</li>
+                        <li>Annotated datasets including all required PPE items with higher accuracy</li>
+                        <li>Gather more robust datasets from real-world environments to improve the accuracy of the trainedmodel.</li>
+                    </ul>
+                    
+                    <h3>Advanced AI Models</h3>
+                    <ul>
+                        <li>Integration with large language models like GPT-4 for contextual understanding</li>
+                        <li>Development of custom model architectures optimized for PPE detection</li>
+                    </ul>
+                    
+                    <h3>Real-time Performance Optimization</h3>
+                    <ul>
+                        <li>Model quantization for faster inference on edge devices</li>
+                        <li>Exploring specialized hardware (TPUs, VPUs) for deployment</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <h2>Hardware Improvements</h2>
+            <div class="section-content">
+                <div class="text-content">
+                    <p>This was the proof of concept of the project, so there are several hardware improvements that could be made:</p>
+                    
+                    <h3>Advanced Camera Systems</h3>
+                    <ul>
+                        <li>Integration of depth-sensing cameras for 3D PPE detection</li>
+                        <li>Implementation of multiple camera angles for comprehensive monitoring, especially for items such as earplugs.</li>
+                        <li>Exploration of thermal imaging for additional safety monitoring</li>
+                        <li>Include lighting solutions to ensure that the camera will be seeing the users in a set environment.</li>
+                    </ul>
+                    
+                    <h3>Vending System Enhancements</h3>
+                    <ul>
+                        <li>Custom-designed dispensing mechanisms optimized for specific PPE types</li>
+                        <li>Integration of robotic elements for more complex item handling</li>
+                        <li>Modular design allowing easy expansion of capacity and item types</li>
+                        <li>Implementation of weight sensors for verification of successful dispensing</li>
+                        <p>Or even better, an actual exisiting PPE vending machine could be used, instead of trying to convert a snack vending machine.</p>
+                    </ul>
+                    
+                    <h3>Safety Gate Integration</h3>
+                    <ul>
+                        <li>Professionally engineered safety gates meeting all relevant safety codes</li>
+                        <li>Integration with facility access control systems</li>
+                        <li>Redundant safety mechanisms to prevent failures</li>
+                        <li>Emergency override systems with proper authorization and logging</li>
+                    </ul>
+                </div>
+                <div class="image-content">
+                    <div class="carousel-container">
+                        <div class="carousel-track">
+                            <div class="carousel-slide">
+                                <img src="images/safety_gate_lock.jpg" alt="Safety Gate Lock Controller" class="carousel-image">
+                                <p class="caption">Safety Gate Lock Controller</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/two_avend_kits.jpg" alt="Two Avend SmartVend PPE Vending Machine Kits" class="carousel-image">
+                                <p class="caption">Two Avend SmartVend PPE Vending Machine Kits with the Vending Machine</p>
+                            </div>
+                        </div>
+                        <button class="carousel-btn prev-btn" aria-label="Previous image">&lt;</button>
+                        <button class="carousel-btn next-btn" aria-label="Next image">&gt;</button>
+                        <div class="carousel-dots"></div>
+                        <button class="carousel-btn fullscreen-btn" aria-label="View fullscreen"><i class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="back-to-home-container">
+        <a href="index.html" class="back-to-home">
+            <i class="fas fa-home"></i> Back to Home
+        </a>
+    </div>
+
+    <a href="#" class="back-to-top" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+    <footer>
+        <div class="footer-content">
+            <div class="logo-section">
+                <a href="https://polytechnic.purdue.edu/" target="_blank">
+                    <img src="images/Polytechnic-logo.svg" alt="Purdue Polytechnic Institute Logo" class="logo">
+                </a>
+            </div>
+            <div class="logo-section">
+                <a href="https://packaging-systems.com/" target="_blank" class="customer-logo-link">
+                    <img src="images/packing_systems.webp" alt="Packaging Systems of Indiana Logo" class="logo customer-logo">
+                </a>
+            </div>
+            <div class="github-link">
+                <a href="https://github.com/ckyb63/capstone_T54_gui" target="_blank">
+                    <i class="fab fa-github"></i> View project on GitHub
+                </a>
+            </div>
+            <div class="contact-section">
+                <!--<h3>Contact</h3>-->
+                <ul class="contact-list">
+                    <!--<li><a href="mailto:chen3901@purdue.edu"><i class="fas fa-envelope"></i> chen3901@purdue.edu</a></li>-->
+                    <li><a href="mailto:ckyb63@gmail.com"><i class="fas fa-envelope"></i>Contact Email</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; Spring 2025 Purdue Polytechnic Senior Capstone - Team 54. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html> 

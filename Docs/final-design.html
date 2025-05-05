@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Design - PPE A.I. Vending Machine</title>
+    <!-- Favicon settings -->
+    <link rel="icon" type="image/png" href="images/P_favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="images/P_favicon.png">
+    <meta name="msapplication-TileImage" content="images/P_favicon.png">
+    <meta name="msapplication-TileColor" content="#00447c">
+    <style>
+        /* Custom favicon media queries */
+        @media (prefers-color-scheme: light) {
+            link[rel="icon"] { 
+                object-fit: contain !important;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>Final Design</h1>
+            <p class="subtitle">PPE A.I. Vending Machine Project</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="nav-container">
+            <button class="hamburger-menu" aria-label="Toggle menu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+            <a href="index.html" class="mobile-home-icon" aria-label="Home">
+                <i class="fas fa-home"></i>
+            </a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="final-design.html" class="active">Final Design</a></li>
+                <li><a href="future-work.html">Future Work</a></li>
+            </ul>
+        </div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+    </nav>
+    
+    <div class="nav-overlay"></div>
+
+    <main>
+        <section class="content-section">
+            <h2>System Architecture</h2>
+            <div class="section-content">
+                <div class="image-content">
+                    <div class="carousel-container">
+                        <div class="carousel-track">
+                            <div class="carousel-slide">
+                                <img src="images/vending_integration.png" alt="System Architecture Diagram" class="carousel-image">
+                                <p class="caption">High-level System Architecture</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/Simple User FLowchart.drawio.png" alt="User Flowchart" class="carousel-image">
+                                <p class="caption">User Flowchart</p>
+                            </div>
+                        </div>
+                        <button class="carousel-btn prev-btn" aria-label="Previous image">&lt;</button>
+                        <button class="carousel-btn next-btn" aria-label="Next image">&gt;</button>
+                        <div class="carousel-dots"></div>
+                        <button class="carousel-btn fullscreen-btn" aria-label="View fullscreen"><i class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+                <div class="text-content">
+                    <p>Our PPE A.I. Vending Machine integrates several subsystems into a cohesive solution:</p>
+                    
+                    <h3>Core Components</h3>
+                    <ul>
+                        <li><strong>Vision System:</strong> Camera and AI vision processing for PPE detection</li>
+                        <li><strong>Control System:</strong> Central computing unit managing the entire workflow</li>
+                        <li><strong>User Interface:</strong> Touchscreen display for user interaction</li>
+                        <li><strong>Dispensing System:</strong> Vending machine for delivering PPE items</li>
+                        <li><strong>Safety Gate:</strong> Access control mechanism based on compliance status</li>
+                    </ul>
+                    
+                    <h3>Data Flow</h3>
+                    <p>The system operates in the following sequence:</p>
+                    <ol>
+                        <li>User approaches the machine and is detected by the camera</li>
+                        <li>YOLO vision model analyzes the camera feed to detect PPE items</li>
+                        <li>Results are processed by the computing system and displayed on the GUI</li>
+                        <li>If compliant, the safety gate unlocks; if not, missing PPE is identified</li>
+                        <li>User can request dispensing of missing PPE items through the interface</li>
+                        <li>System dispenses requested items and re-evaluates compliance</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <h2>Camera System</h2>
+            <div class="section-content">
+                <div class="text-content">
+                    <p>The camera system serves as the "eyes" of our solution, providing visual data for AI processing:</p>
+                    
+                    <h3>Hardware Specifications</h3>
+                    <ul>
+                        <li><strong>Camera Model:</strong> Onsemi Ar0821 Camera Module</li>
+                        <li><strong>Resolution:</strong> 8MP (4K)</li>
+                        <li><strong>Frame Rate:</strong> Up to 60fps</li>
+                        <li><strong>Dynamic Range:</strong> High Dynamic Range (HDR) capability</li>
+                        <li><strong>Integration:</strong> Connected to Nvidia Jetson via MIPI CSI-2</li>
+                    </ul>
+                    
+                    <h3>Camera Placement</h3>
+                    <p>The camera is strategically positioned to capture users approaching the machine:</p>
+                    <ul>
+                        <li>Mounted at approximately 5.5 feet height</li>
+                        <li>Angled to capture full-body view of users</li>
+                        <li>Positioned to minimize lighting interference</li>
+                        <li>Field of view optimized for detection of all relevant PPE items</li>
+                    </ul>
+                    
+                    <h3>Image Processing Pipeline</h3>
+                    <ul>
+                        <li>Real-time image acquisition at 30fps</li>
+                        <li>Resolution scaling to optimize processing speed</li>
+                        <li>Color space conversion for vision processing</li>
+                        <li>Pre-processing for noise reduction and image enhancement</li>
+                    </ul>
+                </div>
+                <div class="image-content">
+                    <figure class="section-figure">
+                        <img src="images/onsemi_cam.png" alt="Onsemi AR0821 Camera" class="section-image">
+                        <figcaption>Onsemi AR0821 Camera Module</figcaption>
+                    </figure>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <h2>AI Vision System</h2>
+            <div class="section-content">
+                <div class="image-content">
+                    <figure class="section-figure">
+                        <img src="images/yolo_detection.jpg" alt="YOLO PPE Detection" class="section-image">
+                        <figcaption>YOLO Model Detecting PPE Items</figcaption>
+                    </figure>
+                </div>
+                <div class="text-content">
+                    <p>Our solution employs YOLO (You Only Look Once) for real-time object detection of PPE items:</p>
+                    
+                    <h3>Model Architecture</h3>
+                    <ul>
+                        <li><strong>Base Model:</strong> YOLO</li>
+                        <li><strong>Neural Network:</strong> Convol</li>
+                        <li><strong>Input Size:</strong> 640x640 pixels</li>
+                        <li><strong>Inference Time:</strong> ~25ms on Nvidia Jetson</li>
+                    </ul>
+                    
+                    <h3>Detection Capabilities</h3>
+                    <p>The vision system can detect the following PPE items:</p>
+                    <ul>
+                        <li>Hard Hat</li>
+                        <li>Safety Glasses/Eye Protection</li>
+                        <li>High-Visibility Vest</li>
+                        <li>Protective Gloves</li>
+                        <li>Ear Protection (Plugs)</li>
+                    </ul>
+                    
+                    <h3>Performance Metrics</h3>
+                    <ul>
+                        <li><strong>Average Precision (AP):</strong> x% </li>
+                        <li><strong>Inference Speed:</strong> 30+ FPS on Nvidia Jetson</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <h2>Graphical User Interface</h2>
+            <div class="section-content">
+                <div class="text-content">
+                    <p>The GUI provides an intuitive interface for users to interact with the system:</p>
+                    
+                    <h3>Technology Stack</h3>
+                    <ul>
+                        <li><strong>Framework:</strong> PySide6 (Qt for Python)</li>
+                        <li><strong>Backend:</strong> Python 3.8.10</li>
+                        <li><strong>Styling:</strong> Qt Style Sheets (QSS)</li>
+                        <li><strong>Resolution:</strong> 1024x768, responsive design (Depended on the physical screen size)</li>
+                    </ul>
+                    
+                    <h3>Interface Elements</h3>
+                    <ul>
+                        <li><strong>Live Camera Feed:</strong> Displays real-time video with PPE detection</li>
+                        <li><strong>PPE Status Indicators:</strong> Color-coded buttons showing detection status</li>
+                        <li><strong>Dispensing Controls:</strong> Touch buttons to request PPE items</li>
+                        <li><strong>Safety Gate Control:</strong> Unlock indicator and override button</li>
+                        <li><strong>System Status:</strong> Operational status and error messages</li>
+                    </ul>
+                    
+                    <h3>User Workflow</h3>
+                    <ol>
+                        <li>User approaches machine and views their image on the screen</li>
+                        <li>PPE status indicators update in real-time</li>
+                        <li>Compliant items show as green, missing items as red</li>
+                        <li>User can press red buttons to request missing items/ or in automatic mode, the system will automatically request the missing items</li>
+                        <li>System dispenses requested items</li>
+                        <li>Once all items are green, safety gate unlocks automatically</li>
+                    </ol>
+                </div>
+                <div class="image-content">
+                    <div class="carousel-container">
+                        <div class="carousel-track">
+                            <div class="carousel-slide">
+                                <img src="images/gui_demo.png" alt="GUI Interface" class="carousel-image">
+                                <p class="caption">PySide6 User Interface in Operation</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/Simple User FLowchart.drawio.png" alt="Simple User Flowchart" class="carousel-image">
+                                <p class="caption">Simple User Interaction Flowchart</p>
+                            </div>
+                        </div>
+                        <button class="carousel-btn prev-btn" aria-label="Previous image">&lt;</button>
+                        <button class="carousel-btn next-btn" aria-label="Next image">&gt;</button>
+                        <div class="carousel-dots"></div>
+                        <button class="carousel-btn fullscreen-btn" aria-label="View fullscreen"><i class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <h2>Vending Machine Integration</h2>
+            <div class="section-content">
+                <div class="image-content">
+                    <div class="carousel-container">
+                        <div class="carousel-track">
+                            <div class="carousel-slide">
+                                <img src="images/two_avend_kits.jpg" alt="Vending Machine Integration Avend Kits" class="carousel-image">
+                                <p class="caption">Avend SmartVend Kits Integration</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/vending_integration.png" alt="Vending Machine Integration System Diagram" class="carousel-image">
+                                <p class="caption">Avend SmartVend Integration System Diagram</p>
+                            </div>
+                        </div>
+                        <button class="carousel-btn prev-btn" aria-label="Previous image">&lt;</button>
+                        <button class="carousel-btn next-btn" aria-label="Next image">&gt;</button>
+                        <div class="carousel-dots"></div>
+                        <button class="carousel-btn fullscreen-btn" aria-label="View fullscreen"><i class="fas fa-expand"></i></button>
+                    </div>
+                </div>
+                <div class="text-content">
+                    <p>Our solution integrates with commercial vending machine hardware for reliable dispensing:</p>
+                    
+                    <h3>Vending Hardware</h3>
+                    <ul>
+                        <li><strong>Base Unit:</strong> Modified commercial vending machine</li>
+                        <li><strong>Control System:</strong> Two Avend SmartVend Kits</li>
+                        <li><strong>Capacity:</strong> 24 slots across 6 vertical sections</li>
+                        <li><strong>Item Types:</strong> Configured for diverse PPE items of varying sizes</li>
+                    </ul>
+                    
+                    <h3>Communication Protocol</h3>
+                    <ul>
+                        <li><strong>Primary Interface:</strong> HTTP REST API</li>
+                        <li><strong>Endpoint Structure:</strong> Product-specific endpoints for dispensing</li>
+                    </ul>
+                    
+                    <h3>Dispensing Workflow</h3>
+                    <ol>
+                        <li>User requests item through GUI</li>
+                        <li>Control system sends HTTP request to SmartVend unit</li>
+                        <li>SmartVend controller sends corresponding signal to the Vending controller</li>
+                        <li>Item is dispensed from the vending machine</li>
+                        <li>Status is updated in the UI</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <h2>Safety Gate System</h2>
+            <div class="section-content">
+                <div class="text-content">
+                    <p>The safety gate system provides physical access control based on PPE compliance:</p>
+                    
+                    <h3>Hardware Components</h3>
+                    <ul>
+                        <li><strong>Control Unit:</strong> ESP32 microcontroller</li>
+                        <li><strong>Locking Mechanism:</strong> Electromagnetic lock (12V DC)</li>
+                        <li><strong>Power Supply:</strong> Regulated 12V DC</li>
+                    </ul>
+                    
+                    <h3>Communication</h3>
+                    <ul>
+                        <li><strong>Protocol:</strong> Wired Serial Communication</li>
+                        <li><strong>Commands:</strong> Lock/unlock</li>
+                        <li><strong>Failure Mode:</strong> In case of power loss, the gate should be in the unlocked state</li>
+                    </ul>
+                    
+                    <h3>Safety Features</h3>
+                    <ul>
+                        <li>Emergency override button for immediate unlock</li>
+                        <li>Automatic unlock in case of power or system failure</li>
+                        <li>Visual indicators for lock status</li>
+                        <li>Activity logging for all lock/unlock events</li>
+                        <li>Bluetooth broadcast for gate status</li>
+                    </ul>
+
+                    <p>The actual safety gate will require specific designs for specific locations following proper protocols and regulations, so in out proof of concept we only created a simple gate controller indicator to demonstrate its function.</p>
+                    
+                </div>
+                <div class="image-content">
+                    <figure class="section-figure">
+                        <img src="images/safety_gate_lock.jpg" alt="Safety Gate Lock" class="section-image">
+                        <figcaption>Electromagnetic Safety Gate Lock System</figcaption>
+                    </figure>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <h2>Computing Platform</h2>
+            <div class="section-content">
+                <div class="image-content">
+                    <figure class="section-figure">
+                        <img src="images/nvidia_jetson.jpg" alt="Nvidia Jetson Platform" class="section-image">
+                        <figcaption>Nvidia Jetson Computing Platform</figcaption>
+                    </figure>
+                </div>
+                <div class="text-content">
+                    <p>The entire system is powered by an Nvidia Jetson computing platform:</p>
+                    
+                    <h3>Hardware Specifications</h3>
+                    <ul>
+                        <li><strong>Model:</strong> Nvidia Jetson Orin Nano Developer Kit</li>
+                        <li><strong>CPU:</strong> 6-core ARM Cortex-A78AE</li>
+                        <li><strong>GPU:</strong> 1024-core NVIDIA Ampere architecture</li>
+                        <li><strong>Memory:</strong> 8GB 128-bit LPDDR5</li>
+                        <li><strong>Storage:</strong> 512GB SD Card</li>
+                    </ul>
+                    
+                    <h3>Software Environment</h3>
+                    <ul>
+                        <li><strong>Operating System:</strong> Ubuntu 20.04 LTS</li>
+                        <li><strong>AI Framework:</strong> NVIDIA JetPack 5 SDK</li>
+                        <li><strong>Vision Libraries:</strong> OpenCV, PyTorch, Ultralytics YOLO</li>
+                        <li><strong>Application Stack:</strong> Python 3.8.10, PySide6</li>
+                    </ul>
+                    
+                    <h3>Performance Optimization</h3>
+                    <ul>
+                        <li>CUDA acceleration for vision processing</li>
+                        <li>PyTorch, TorchVision combination optimized for utilizing the Jetson GPU</li>
+                        <li>Multithreaded architecture for parallel processing</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="back-to-home-container">
+        <a href="index.html" class="back-to-home">
+            <i class="fas fa-home"></i> Back to Home
+        </a>
+    </div>
+
+    <a href="#" class="back-to-top" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+    <footer>
+        <div class="footer-content">
+            <div class="logo-section">
+                <a href="https://polytechnic.purdue.edu/" target="_blank">
+                    <img src="images/Polytechnic-logo.svg" alt="Purdue Polytechnic Institute Logo" class="logo">
+                </a>
+            </div>
+            <div class="logo-section">
+                <a href="https://packaging-systems.com/" target="_blank" class="customer-logo-link">
+                    <img src="images/packing_systems.webp" alt="Packaging Systems of Indiana Logo" class="logo customer-logo">
+                </a>
+            </div>
+            <div class="github-link">
+                <a href="https://github.com/ckyb63/capstone_T54_gui" target="_blank">
+                    <i class="fab fa-github"></i> View project on GitHub
+                </a>
+            </div>
+            <div class="contact-section">
+                <!--<h3>Contact</h3>-->
+                <ul class="contact-list">
+                    <!--<li><a href="mailto:chen3901@purdue.edu"><i class="fas fa-envelope"></i> chen3901@purdue.edu</a></li>-->
+                    <li><a href="mailto:ckyb63@gmail.com"><i class="fas fa-envelope"></i>Contact Email</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; Spring 2025 Purdue Polytechnic Senior Capstone - Team 54. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html> 

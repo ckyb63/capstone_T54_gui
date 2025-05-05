@@ -36,6 +36,9 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             document.querySelector('.back-to-top').classList.remove('visible');
         }
+        
+        // Update progress bar
+        updateProgressBar();
     });
     
     // Smooth scrolling for anchor links with fixed header offset adjustment for mobile
@@ -170,4 +173,273 @@ document.addEventListener('DOMContentLoaded', function() {
             behavior: 'smooth'
         });
     });
+
+    // Image click-to-enlarge functionality
+    setupImageEnlarge();
+    
+    function setupImageEnlarge() {
+        // Get all images that should be enlargeable, excluding carousel images which are handled separately
+        const enlargeableImages = document.querySelectorAll('.section-image, .component-image:not(.carousel-image)');
+        
+        // Create fullscreen overlay if it doesn't exist
+        let fullscreenOverlay = document.querySelector('.fullscreen-overlay');
+        if (!fullscreenOverlay) {
+            fullscreenOverlay = document.createElement('div');
+            fullscreenOverlay.classList.add('fullscreen-overlay');
+            
+            const fullscreenImage = document.createElement('img');
+            fullscreenImage.classList.add('fullscreen-image');
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.classList.add('close-fullscreen');
+            closeBtn.innerHTML = '&times;';
+            closeBtn.addEventListener('click', closeFullscreen);
+            
+            fullscreenOverlay.appendChild(fullscreenImage);
+            fullscreenOverlay.appendChild(closeBtn);
+            document.body.appendChild(fullscreenOverlay);
+            
+            // Close fullscreen when clicking outside image
+            fullscreenOverlay.addEventListener('click', e => {
+                if (e.target === fullscreenOverlay) {
+                    closeFullscreen();
+                }
+            });
+            
+            // Close fullscreen on ESC key
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape' && fullscreenOverlay.classList.contains('active')) {
+                    closeFullscreen();
+                }
+            });
+        }
+        
+        // Add click event to all enlargeable images
+        enlargeableImages.forEach(image => {
+            image.style.cursor = 'pointer';
+            image.addEventListener('click', function() {
+                openFullscreen(this.src, false); // Added second parameter to indicate not from carousel
+            });
+        });
+        
+        function openFullscreen(imageSrc, isCarousel = false) {
+            const fullscreenImage = fullscreenOverlay.querySelector('.fullscreen-image');
+            fullscreenImage.src = imageSrc;
+            fullscreenOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+        }
+        
+        function closeFullscreen() {
+            fullscreenOverlay.classList.remove('active');
+            document.body.style.overflow = ''; // Restore scrolling
+            
+            // Remove any carousel navigation controls if they exist
+            const navButtons = fullscreenOverlay.querySelectorAll('.fullscreen-nav-btn');
+            navButtons.forEach(btn => btn.remove());
+        }
+    }
+
+    // Carousel Functionality
+    initCarousel();
+    
+    function initCarousel() {
+        const carousels = document.querySelectorAll('.carousel-container');
+        
+        carousels.forEach(carousel => {
+            const track = carousel.querySelector('.carousel-track');
+            const slides = Array.from(carousel.querySelectorAll('.carousel-slide'));
+            const prevBtn = carousel.querySelector('.prev-btn');
+            const nextBtn = carousel.querySelector('.next-btn');
+            const dotsContainer = carousel.querySelector('.carousel-dots');
+            const fullscreenBtn = carousel.querySelector('.fullscreen-btn');
+            
+            let currentIndex = 0;
+            
+            // Create dot indicators
+            slides.forEach((_, index) => {
+                const dot = document.createElement('div');
+                dot.classList.add('carousel-dot');
+                if (index === 0) dot.classList.add('active');
+                dot.addEventListener('click', () => goToSlide(index));
+                dotsContainer.appendChild(dot);
+            });
+            
+            // Button event listeners
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    goToSlide(currentIndex - 1);
+                });
+            }
+            
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    goToSlide(currentIndex + 1);
+                });
+            }
+            
+            // Make carousel images clickable
+            slides.forEach(slide => {
+                const img = slide.querySelector('img');
+                if (img) {
+                    img.addEventListener('click', () => {
+                        openCarouselFullscreen(img.src);
+                    });
+                }
+            });
+            
+            // Fullscreen functionality
+            if (fullscreenBtn) {
+                fullscreenBtn.addEventListener('click', () => {
+                    // Use the same fullscreen overlay as our image enlarger
+                    const imageSrc = slides[currentIndex].querySelector('img').src;
+                    openCarouselFullscreen(imageSrc);
+                });
+            }
+            
+            // Navigation with swipe for touch devices
+            let touchStartX = 0;
+            let touchEndX = 0;
+            
+            track.addEventListener('touchstart', e => {
+                touchStartX = e.changedTouches[0].clientX;
+            });
+            
+            track.addEventListener('touchend', e => {
+                touchEndX = e.changedTouches[0].clientX;
+                handleSwipe();
+            });
+            
+            function handleSwipe() {
+                const swipeThreshold = 50;
+                if (touchStartX - touchEndX > swipeThreshold) {
+                    // Swipe left, go to next
+                    goToSlide(currentIndex + 1);
+                } else if (touchEndX - touchStartX > swipeThreshold) {
+                    // Swipe right, go to previous
+                    goToSlide(currentIndex - 1);
+                }
+            }
+            
+            // Core carousel functions
+            function goToSlide(index) {
+                // Handle loop around
+                if (index < 0) {
+                    index = slides.length - 1;
+                } else if (index >= slides.length) {
+                    index = 0;
+                }
+                
+                currentIndex = index;
+                updateCarousel();
+            }
+            
+            function updateCarousel() {
+                // Move the track
+                track.style.transform = `translateX(-${currentIndex * 100}%)`;
+                
+                // Update dots
+                const dots = dotsContainer.querySelectorAll('.carousel-dot');
+                dots.forEach((dot, index) => {
+                    if (index === currentIndex) {
+                        dot.classList.add('active');
+                    } else {
+                        dot.classList.remove('active');
+                    }
+                });
+            }
+            
+            // Function specific for opening carousel images in fullscreen
+            function openCarouselFullscreen(imageSrc) {
+                const fullscreenOverlay = document.querySelector('.fullscreen-overlay');
+                const fullscreenImage = fullscreenOverlay.querySelector('.fullscreen-image');
+                fullscreenImage.src = imageSrc;
+                fullscreenOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden'; // Prevent scrolling
+                
+                // Add navigation controls for the carousel images
+                addCarouselControls();
+            }
+            
+            // Add carousel-specific navigation controls to the fullscreen view
+            function addCarouselControls() {
+                const fullscreenOverlay = document.querySelector('.fullscreen-overlay');
+                
+                // Remove existing carousel controls if any
+                const existingControls = fullscreenOverlay.querySelectorAll('.fullscreen-nav-btn');
+                existingControls.forEach(control => control.remove());
+                
+                // Add carousel navigation controls
+                const prevFullscreenBtn = document.createElement('button');
+                prevFullscreenBtn.classList.add('fullscreen-nav-btn', 'prev-fullscreen-btn');
+                prevFullscreenBtn.innerHTML = '&#10094;';
+                prevFullscreenBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    goToSlide(currentIndex - 1);
+                    updateFullscreenImage();
+                });
+                
+                const nextFullscreenBtn = document.createElement('button');
+                nextFullscreenBtn.classList.add('fullscreen-nav-btn', 'next-fullscreen-btn');
+                nextFullscreenBtn.innerHTML = '&#10095;';
+                nextFullscreenBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    goToSlide(currentIndex + 1);
+                    updateFullscreenImage();
+                });
+                
+                fullscreenOverlay.appendChild(prevFullscreenBtn);
+                fullscreenOverlay.appendChild(nextFullscreenBtn);
+                
+                // Add keyboard navigation for fullscreen
+                const keyHandler = (e) => {
+                    if (!fullscreenOverlay.classList.contains('active')) return;
+                    
+                    if (e.key === 'ArrowLeft') {
+                        goToSlide(currentIndex - 1);
+                        updateFullscreenImage();
+                    } else if (e.key === 'ArrowRight') {
+                        goToSlide(currentIndex + 1);
+                        updateFullscreenImage();
+                    }
+                };
+                
+                // Remove existing event listener to avoid duplicates
+                document.removeEventListener('keydown', keyHandler);
+                document.addEventListener('keydown', keyHandler);
+                
+                // Remove controls when fullscreen is closed
+                const removeControls = () => {
+                    if (!fullscreenOverlay.classList.contains('active')) {
+                        prevFullscreenBtn.remove();
+                        nextFullscreenBtn.remove();
+                        document.removeEventListener('keydown', keyHandler);
+                        fullscreenOverlay.removeEventListener('transitionend', removeControls);
+                    }
+                };
+                
+                fullscreenOverlay.addEventListener('transitionend', removeControls);
+            }
+            
+            function updateFullscreenImage() {
+                const fullscreenOverlay = document.querySelector('.fullscreen-overlay');
+                if (fullscreenOverlay && fullscreenOverlay.classList.contains('active')) {
+                    const fullscreenImage = fullscreenOverlay.querySelector('.fullscreen-image');
+                    fullscreenImage.src = slides[currentIndex].querySelector('img').src;
+                }
+            }
+        });
+    }
+
+    // Progress bar functionality
+    function updateProgressBar() {
+        const progressBar = document.getElementById('progress-bar');
+        if (progressBar) {
+            const totalHeight = document.body.scrollHeight - window.innerHeight;
+            const progress = (window.pageYOffset / totalHeight) * 100;
+            progressBar.style.width = progress + '%';
+        }
+    }
+
+    // Initial progress bar update
+    updateProgressBar();
 }); 
