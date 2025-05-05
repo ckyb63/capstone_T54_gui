@@ -11,7 +11,7 @@ Ensuring factory-wide workplace PPE compliance is a significant challenge. Tradi
 
 ## Overview
 
-This repository contains the codebase for the 2025-2026 Purdue Polytechnic Senior Capstone project, the PPE A.I. Vending Machine. This innovative solution combines computer vision, a user-friendly interface, and vending machine integration to ensure workplace safety compliance.
+This repository contains the codebase for the Fall 2024 - Spring 2025 Purdue Polytechnic Senior Capstone project, the PPE A.I. Vending Machine. This innovative solution combines computer vision, a user-friendly interface, and vending machine integration to ensure workplace safety compliance.
 
 ## Repository Components
 
