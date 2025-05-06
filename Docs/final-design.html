@@ -42,9 +42,14 @@
                 <i class="fas fa-home"></i>
             </a>
             <ul class="nav-links">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="final-design.html" class="active">Final Design</a></li>
-                <li><a href="future-work.html">Future Work</a></li>
+                <li><a href="index.html#design">Home</a></li>
+                <li><a href="#system-architecture">System Architecture</a></li>
+                <li><a href="#camera-system">Camera</a></li>
+                <li><a href="#ai-vision-system">AI Vision</a></li>
+                <li><a href="#graphical-user-interface">GUI</a></li>
+                <li><a href="#vending-machine-integration">Vending Machine</a></li>
+                <li><a href="#safety-gate-system">Safety Gate</a></li>
+                <li><a href="#computing-platform">Computing</a></li>
             </ul>
         </div>
         <div class="progress-container">
@@ -55,7 +60,7 @@
     <div class="nav-overlay"></div>
 
     <main>
-        <section class="content-section">
+        <section class="content-section" id="system-architecture">
             <h2>System Architecture</h2>
             <div class="section-content">
                 <div class="image-content">
@@ -68,6 +73,10 @@
                             <div class="carousel-slide">
                                 <img src="images/Simple User FLowchart.drawio.png" alt="User Flowchart" class="carousel-image">
                                 <p class="caption">User Flowchart</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/internal_components.jpg" alt="Internal Components" class="carousel-image">
+                                <p class="caption">Internal Components</p>
                             </div>
                         </div>
                         <button class="carousel-btn prev-btn" aria-label="Previous image">&lt;</button>
@@ -102,7 +111,7 @@
             </div>
         </section>
 
-        <section class="content-section">
+        <section class="content-section" id="camera-system">
             <h2>Camera System</h2>
             <div class="section-content">
                 <div class="text-content">
@@ -143,7 +152,7 @@
             </div>
         </section>
 
-        <section class="content-section">
+        <section class="content-section" id="ai-vision-system">
             <h2>AI Vision System</h2>
             <div class="section-content">
                 <div class="image-content">
@@ -182,7 +191,7 @@
             </div>
         </section>
 
-        <section class="content-section">
+        <section class="content-section" id="graphical-user-interface">
             <h2>Graphical User Interface</h2>
             <div class="section-content">
                 <div class="text-content">
@@ -236,7 +245,7 @@
             </div>
         </section>
 
-        <section class="content-section">
+        <section class="content-section" id="vending-machine-integration">
             <h2>Vending Machine Integration</h2>
             <div class="section-content">
                 <div class="image-content">
@@ -247,8 +256,24 @@
                                 <p class="caption">Avend SmartVend Kits Integration</p>
                             </div>
                             <div class="carousel-slide">
-                                <img src="images/vending_integration.png" alt="Vending Machine Integration System Diagram" class="carousel-image">
-                                <p class="caption">Avend SmartVend Integration System Diagram</p>
+                                <img src="images/vending_slots.jpg" alt="Vending Machine Slots" class="carousel-image">
+                                <p class="caption">Vending Machine Slots</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/two_avend_mounted.jpg" alt="Two Avend SmartVend Kits Mounted" class="carousel-image">
+                                <p class="caption">Two Avend SmartVend Kits Mounted</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/internal_components_wide.jpg" alt="Internal Components" class="carousel-image">
+                                <p class="caption">Internal Components</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/networking_wires.jpg" alt="Networking Wires" class="carousel-image">
+                                <p class="caption">Networking Wires</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/safety_gate_controller_indicator.jpg" alt="Safety Gate Controller Indicator" class="carousel-image">
+                                <p class="caption">Safety Gate Controller Indicator</p>
                             </div>
                         </div>
                         <button class="carousel-btn prev-btn" aria-label="Previous image">&lt;</button>
@@ -286,7 +311,7 @@
             </div>
         </section>
 
-        <section class="content-section">
+        <section class="content-section" id="safety-gate-system">
             <h2>Safety Gate System</h2>
             <div class="section-content">
                 <div class="text-content">
@@ -327,14 +352,26 @@
             </div>
         </section>
 
-        <section class="content-section">
+        <section class="content-section" id="computing-platform">
             <h2>Computing Platform</h2>
             <div class="section-content">
                 <div class="image-content">
-                    <figure class="section-figure">
-                        <img src="images/nvidia_jetson.jpg" alt="Nvidia Jetson Platform" class="section-image">
-                        <figcaption>Nvidia Jetson Computing Platform</figcaption>
-                    </figure>
+                    <div class="carousel-container">
+                        <div class="carousel-track">
+                            <div class="carousel-slide">
+                                <img src="images/Jetson_mounted.jpg" alt="Nvidia Jetson Orin Nano Developer Kit" class="carousel-image">
+                                <p class="caption">Nvidia Jetson Orin Nano Developer Kit</p>
+                            </div>
+                            <div class="carousel-slide">
+                                <img src="images/Jetson_mounted_2.jpg" alt="Nvidia Jetson Orin Nano Developer Kit" class="carousel-image">
+                                <p class="caption">Nvidia Jetson Orin Nano Developer Kit</p>
+                            </div>
+                        </div>
+                        <button class="carousel-btn prev-btn" aria-label="Previous image">&lt;</button>
+                        <button class="carousel-btn next-btn" aria-label="Next image">&gt;</button>
+                        <div class="carousel-dots"></div>
+                        <button class="carousel-btn fullscreen-btn" aria-label="View fullscreen"><i class="fas fa-expand"></i></button>
+                    </div>
                 </div>
                 <div class="text-content">
                     <p>The entire system is powered by an Nvidia Jetson computing platform:</p>
@@ -368,7 +405,7 @@
     </main>
 
     <div class="back-to-home-container">
-        <a href="index.html" class="back-to-home">
+        <a href="index.html#design" class="back-to-home">
             <i class="fas fa-home"></i> Back to Home
         </a>
     </div>

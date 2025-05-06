@@ -22,6 +22,69 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Function to handle scrolling to an element with proper offset
+    function scrollToElement(targetElement, useSmooth = true) {
+        if (!targetElement) return;
+        
+        // Get the height of the fixed header
+        const navHeight = document.querySelector('nav').offsetHeight;
+        // Add extra padding for better visual appearance
+        const extraPadding = 30;
+        const totalOffset = navHeight + extraPadding;
+        
+        // Get the element's position relative to the viewport
+        const elementRect = targetElement.getBoundingClientRect();
+        const absoluteElementTop = elementRect.top + window.pageYOffset;
+        
+        // Scroll to element
+        window.scrollTo({
+            top: absoluteElementTop - totalOffset,
+            behavior: useSmooth ? 'smooth' : 'auto'
+        });
+    }
+    
+    // Smooth scrolling for anchor links with fixed header offset adjustment
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+            
+            if (targetElement) {
+                scrollToElement(targetElement, true);
+            }
+        });
+    });
+    
+    // Handle direct URL navigation to anchor links
+    if (window.location.hash) {
+        // Use a larger delay to ensure the page is fully loaded and rendered
+        setTimeout(function() {
+            const targetId = window.location.hash;
+            const targetElement = document.querySelector(targetId);
+            
+            if (targetElement) {
+                scrollToElement(targetElement, false);
+            }
+        }, 300); // Larger delay for more reliable positioning
+    }
+    
+    // Recalculate scroll positions when window is resized
+    let resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            // If we're at a hash location, reposition after resize
+            if (window.location.hash) {
+                const targetElement = document.querySelector(window.location.hash);
+                if (targetElement) {
+                    scrollToElement(targetElement, false);
+                }
+            }
+        }, 250);
+    });
+    
     // Add scrolled class to body when page is scrolled
     window.addEventListener('scroll', () => {
         if (window.scrollY > 20) {
@@ -41,42 +104,25 @@ document.addEventListener('DOMContentLoaded', function() {
         updateProgressBar();
     });
     
-    // Smooth scrolling for anchor links with fixed header offset adjustment for mobile
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            
-            const targetId = this.getAttribute('href');
-            const targetElement = document.querySelector(targetId);
-            
-            if (targetElement) {
-                // Adjust scroll position based on screen size (account for fixed header on mobile)
-                const isMobile = window.innerWidth <= 768;
-                const offset = isMobile ? 60 : 50;
-                
-                window.scrollTo({
-                    top: targetElement.offsetTop - offset,
-                    behavior: 'smooth'
-                });
-            }
-        });
-    });
-    
     // Active section highlighting in navigation
     const sections = document.querySelectorAll('.content-section');
     const navLinksArray = document.querySelectorAll('nav ul li a');
     
     window.addEventListener('scroll', () => {
         let current = '';
+        const navHeight = document.querySelector('nav').offsetHeight;
+        const scrollPosition = window.scrollY + navHeight + 30; // Match the offset used in scrollToElement
         
         sections.forEach(section => {
-            const sectionTop = section.offsetTop;
-            const sectionHeight = section.clientHeight;
-            if (pageYOffset >= (sectionTop - 100)) {
+            const sectionTop = section.getBoundingClientRect().top + window.pageYOffset;
+            const sectionBottom = sectionTop + section.offsetHeight;
+            
+            if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
                 current = section.getAttribute('id');
             }
         });
         
+        // Update navigation active state
         navLinksArray.forEach(link => {
             link.classList.remove('active');
             if (link.getAttribute('href') === `#${current}`) {
@@ -85,9 +131,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Add active class styling to navigation
-    const style = document.createElement('style');
-    style.textContent = `
+    // Add active class styling to main navigation
+    const mainNavStyle = document.createElement('style');
+    mainNavStyle.textContent = `
         nav ul li a.active {
             color: var(--secondary-color);
             font-weight: 700;
@@ -104,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
             background-color: var(--secondary-color);
         }
     `;
-    document.head.appendChild(style);
+    document.head.appendChild(mainNavStyle);
     
     // Image lazy loading
     const lazyImages = document.querySelectorAll('img.section-image, img.component-image');

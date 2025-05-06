@@ -3,7 +3,8 @@
 [![Latest Version](https://img.shields.io/badge/Log-v0.12.1-blue.svg)](CHANGELOG.md)
 [![Python Version](https://img.shields.io/badge/Python-3.8.0+-blue.svg?logo=python&logoColor=white)](https://www.python.org/downloads/release/python-31011/)
 [![Maintainer](https://img.shields.io/badge/Maintainer-Max%20Chen-blue.svg)](https://github.com/ckyb63)
-![Status](https://img.shields.io/badge/Status-Finished-darkgray.svg)
+[![Pages Link](https://img.shields.io/badge/Page-Link-blue.svg)](https://ckyb63.github.io/capstone_T54_gui/)
+![Status](https://img.shields.io/badge/Status-Completed-darkgray.svg)
 
 ## Problem Statement
 

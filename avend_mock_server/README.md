@@ -11,7 +11,6 @@ A Flask-based mock server that simulates the AVend Local Dispense API for testin
 
 ## Requirements
 
-- Python 3.6+
 - Flask
 
 ## Usage
@@ -59,4 +58,4 @@ curl http://127.0.0.1:8080/avend?action=dispense
 
 - Sessions expire after 5 minutes of inactivity, just like in the real AVend middleware
 - The mock server simulates the behavior of the real AVend API but doesn't actually control any hardware
-- All responses are returned as JSON
+- All responses are returned as JSON for GUI formatting.

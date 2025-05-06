@@ -4,7 +4,7 @@ A PySide6-based GUI application for interacting with the AVend Local Dispense AP
 
 ## Requirements
 
-- PySide6 (6.9.0)
+- PySide6 (The test GUI)
 - Requests
 
 ## Usage
@@ -27,16 +27,21 @@ A PySide6-based GUI application for interacting with the AVend Local Dispense AP
 
 The `AvendAPI` class provides a Python interface to the AVend Local Dispense API:
 
+- `__init__(host="127.0.0.1", port=8080)` - Initialize the API client with host and port
 - `start_session()` - Start a new vending session
 - `dispense(code=None, mode=None)` - Dispense an item or the cart contents
 - `add_to_cart(code)` - Add an item to the cart
 - `remove_from_cart(code)` - Remove an item from the cart
 - `clear_cart()` - Clear all items from the cart
 - `get_info()` - Get information about the current configuration
+- `start_service_routine(interval=None)` - Start a routine that repeatedly dispenses H1
+- `stop_service_routine()` - Stop the H1 service routine
 
 ## Notes
 
 - A session must be started before any dispense operations
-- Sessions timeout after 5 minutes of inactivity
+- Sessions timeout after 5 minutes of inactivity, which also turns off the Avend Kit.
 - For special characters like * or #, the API handles URL encoding automatically
 - A new cookie is generated for each start session and is only useed for that one dispense.
+- The Service Routine is a work around for the SnackMart Vending Machine we are using, it calls the non-existent H1 product to keep the machine from escaping service mode.
+- Normally you would only use start session and dispense.

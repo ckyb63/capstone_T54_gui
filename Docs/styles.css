@@ -25,7 +25,7 @@ body {
     padding-top: 50px;
 }
 
-/* Header Styles */
+/* Header Styles - For all pages */
 header {
     position: relative;
     color: white;
@@ -33,6 +33,7 @@ header {
     padding: 5rem 1rem 7rem;
     overflow: hidden;
     margin-top: -50px;
+    z-index: 10;
 }
 
 /* Background image container to allow separate positioning */
@@ -83,6 +84,7 @@ nav {
     position: fixed;
     width: 100%;
     left: 0;
+    height: auto; /* Ensure proper height calculation */
 }
 
 .nav-container {
@@ -163,11 +165,15 @@ main {
     margin: 0 auto;
     padding: 2rem;
     padding-top: 2rem;
+    position: relative;
+    z-index: 20;
+    background-color: var(--light-color);
 }
 
 .content-section {
     margin-bottom: 4rem;
-    scroll-margin-top: 70px;
+    scroll-margin-top: 80px; /* Increased for better scroll positioning */
+    padding-top: 0.5rem; /* Reduced to prevent too much space */
 }
 
 /* Special styling for customer section (last section before footer) */
@@ -181,6 +187,7 @@ main {
     margin-bottom: 1.5rem;
     position: relative;
     padding-bottom: 0.5rem;
+    padding-top: 1rem; /* Add padding to ensure heading is visible */
 }
 
 .content-section h2::after {
@@ -197,12 +204,7 @@ main {
     display: flex;
     flex-wrap: wrap;
     gap: 2rem;
-    align-items: center;
-}
-
-.text-content {
-    flex: 1;
-    min-width: 300px;
+    align-items: flex-start;
 }
 
 .image-content {
@@ -210,6 +212,13 @@ main {
     min-width: 300px;
     display: flex;
     justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.text-content {
+    flex: 1;
+    min-width: 300px;
 }
 
 .section-image {
@@ -468,16 +477,8 @@ footer {
     color: var(--secondary-color);
 }
 
-/* Responsive Design */
+/* Mobile-specific fixes */
 @media (max-width: 768px) {
-    .mobile-home-icon {
-        display: block;
-    }
-    
-    .hamburger-menu {
-        display: block;
-    }
-    
     nav {
         padding: 0.3rem 0;
         position: fixed;
@@ -486,10 +487,48 @@ footer {
         left: 0;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
         z-index: 1000;
+        height: auto; /* Ensure proper height calculation */
     }
     
     body {
-        padding-top: 60px;
+        padding-top: 60px; /* Add space for fixed header */
+    }
+    
+    .nav-container {
+        justify-content: center;
+        position: relative;
+        min-height: 45px;
+        padding: 0.5rem 1rem; /* Added padding for better spacing */
+    }
+    
+    /* Adjust content section margins for mobile */
+    .content-section {
+        scroll-margin-top: 70px;
+        margin-top: 0.5rem;
+    }
+    
+    html {
+        scroll-padding-top: 70px;
+    }
+    
+    /* Fix header to reach navigation bar */
+    header {
+        margin-top: -60px;
+        padding-top: 65px;
+        padding-bottom: 1rem;
+    }
+    
+    header::before {
+        background-position: center 5%;
+    }
+    
+    .mobile-home-icon {
+        display: block !important; /* Force display on mobile */
+        z-index: 110; /* Ensure it's above other elements */
+    }
+    
+    .hamburger-menu {
+        display: block;
     }
     
     /* Add a small indicator to show when scrolled */
@@ -507,12 +546,6 @@ footer {
     
     body.scrolled nav:after {
         opacity: 1;
-    }
-    
-    .nav-container {
-        justify-content: center;
-        position: relative;
-        min-height: 45px;
     }
     
     .nav-links {
@@ -575,15 +608,52 @@ footer {
         grid-template-columns: 1fr;
     }
     
-    /* Fix header to reach navigation bar */
-    header {
-        margin-top: -60px;
-        padding-top: 65px;
-        padding-bottom: 1rem;
+    .header-cta {
+        flex-direction: column;
+        gap: 0.8rem;
     }
     
-    header::before {
-        background-position: center 5%;
+    .header-button {
+        padding: 0.7rem 1.2rem;
+        font-size: 0.9rem;
+    }
+    
+    .scroll-indicator {
+        bottom: 15px;
+    }
+    
+    .arrow {
+        margin-top: 10px;
+    }
+    
+    .carousel-container {
+        max-width: 100%;
+        margin: 0;
+    }
+    
+    .carousel-slide {
+        min-height: 250px;
+        max-height: 400px;
+        padding-bottom: 70px;
+    }
+    
+    .carousel-image {
+        max-height: 300px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .carousel-container {
+        max-width: 80%;
+    }
+    
+    .carousel-slide {
+        min-height: 350px;
+        max-height: 600px;
+    }
+    
+    .carousel-image {
+        max-height: 500px;
     }
 }
 
@@ -843,11 +913,12 @@ footer {
 .carousel-container {
     position: relative;
     width: 100%;
-    max-width: 600px;
+    max-width: 100%;
     margin: 0 auto;
     overflow: hidden;
     border-radius: 8px;
     box-shadow: var(--box-shadow);
+    height: auto;
 }
 
 .carousel-track {
@@ -858,8 +929,11 @@ footer {
 .carousel-slide {
     min-width: 100%;
     position: relative;
-    height: 400px;
+    height: auto;
+    min-height: 300px;
+    max-height: 500px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding-top: 10px;
@@ -867,8 +941,10 @@ footer {
 }
 
 .carousel-image {
-    width: 100%;
-    height: 100%;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
     display: block;
     object-fit: contain;
     object-position: center;
@@ -1064,40 +1140,40 @@ footer {
     transition: width 0.1s ease;
 }
 
-/* Mobile Home Icon */
-.mobile-home-icon {
-    display: none;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.5rem;
-    position: absolute;
-    right: 1rem;
-    color: var(--primary-color);
-    font-size: 1.5rem;
-    text-decoration: none;
-}
-
-.mobile-home-icon:hover {
-    color: var(--secondary-color);
-}
-
-@media (max-width: 768px) {
-    .mobile-home-icon {
-        display: block;
-    }
-
-    .hamburger-menu {
-        display: block;
+@media (min-width: 769px) {
+    .carousel-container {
+        max-width: 90%;
     }
     
-    nav {
-        padding: 0.3rem 0;
-        position: fixed;
+    .section-content .image-content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
         width: 100%;
-        top: 0;
-        left: 0;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-        z-index: 1000;
     }
+}
+
+@media (min-width: 992px) {
+    .section-content {
+        align-items: center;
+    }
+    
+    .image-content {
+        flex: 1.2;
+    }
+    
+    .text-content {
+        flex: 0.8;
+    }
+}
+
+#problem {
+    padding-top: 2rem;
+    position: relative;
+    z-index: 20;
+}
+
+/* Ensure proper scroll positioning in all browsers */
+html {
+    scroll-padding-top: 80px; /* Increased value for better positioning */
 } 
